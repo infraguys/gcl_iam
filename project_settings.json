@@ -1,0 +1,17 @@
+{
+    "project": {
+        "name": "gcl_iam",
+        "package_name": "gcl_iam",
+        "description": "Genesis IAM library",
+        "summary": "My project summary"
+    },
+    "author": {
+        "name": "Genesis Corporation",
+        "email": "eugene@frolov.net.ru"
+    },
+    "template_info": {
+        "name": "py_dummy",
+        "version": "1.0.0",
+        "template_file_name": "py_dummy.settings.json"
+    }
+}
