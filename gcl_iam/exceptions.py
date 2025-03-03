@@ -28,3 +28,7 @@ class AnotherIamSessionAlreadyStored(GclIamError):
 
 class IamSessionNotFound(GclIamError):
     __template__ = "IAM session not found in context storage"
+
+
+class PolicyNotAuthorized(GclIamError):
+    __template__ = "Policy rule {rule} is disallowed."
