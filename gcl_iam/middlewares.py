@@ -24,7 +24,9 @@ import re
 from restalchemy.api.middlewares import contexts as contexts_mw
 from restalchemy.api.middlewares import errors as errors_mw
 
+from gcl_iam import algorithms
 from gcl_iam import contexts
+from gcl_iam import drivers
 from gcl_iam import engines
 from gcl_iam import exceptions as exc
 
@@ -69,8 +71,8 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
             context_kwargs=context_kwargs,
         )
         self._token_algorithm = token_algorithm
-        self._iam_engine_driver = iam_engine_driver
-        self._skip_auth_endpoints = skip_auth_endpoints
+        self._iam_engine_driver = iam_engine_driver or drivers.HttpDriver()
+        self._skip_auth_endpoints = skip_auth_endpoints or []
 
     def _should_skip_auth(self, req):
         for endpoint in self._skip_auth_endpoints:
@@ -97,7 +99,7 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
                         driver=self._iam_engine_driver,
                     )
                 except Exception:
-                    LOG.exception("Invalid auth token by reasone:")
+                    LOG.exception("Invalid auth token by reason:")
                     raise exc.InvalidAuthTokenError()
 
                 with ctx.iam_session(iam_context):
