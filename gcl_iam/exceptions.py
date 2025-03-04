@@ -22,6 +22,10 @@ class GenesisCoreLibraryIamError(root.Error):
     __template__ = "Generic Genesis Core Library IAM Error"
 
 
+class NoIamSessionStored(GenesisCoreLibraryIamError):
+    __template__ = "No IAM session stored in context storage"
+
+
 class CommonForbiddenError(GenesisCoreLibraryIamError):
     __template__ = "Action is forbidden!"
 
