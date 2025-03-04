@@ -18,17 +18,45 @@
 from izulu import root
 
 
-class GclIamError(root.Error):
+class GenesisCoreLibraryIamError(root.Error):
     __template__ = "Generic Genesis Core Library IAM Error"
 
 
-class AnotherIamSessionAlreadyStored(GclIamError):
+class CommonForbiddenError(GenesisCoreLibraryIamError):
+    __template__ = "Action is forbidden!"
+
+
+class PolicyNotAuthorized(CommonForbiddenError):
+    __template__ = "Policy rule {rule} is disallowed."
+
+
+class AnotherIamSessionAlreadyStoredError(GenesisCoreLibraryIamError):
     __template__ = "Another IAM session is already stored in context storage"
 
 
-class IamSessionNotFound(GclIamError):
+class IamSessionNotFoundError(GenesisCoreLibraryIamError):
     __template__ = "IAM session not found in context storage"
 
 
-class PolicyNotAuthorized(GclIamError):
-    __template__ = "Policy rule {rule} is disallowed."
+class CredentialsAreInvalidError(GenesisCoreLibraryIamError):
+    __template__ = "The provided credentials are invalid"
+
+
+class InvalidRefreshTokenError(CredentialsAreInvalidError):
+    __template__ = "Refresh token has expired or is invalid"
+
+
+class InvalidAuthTokenError(CredentialsAreInvalidError):
+    __template__ = "Auth token has expired or is invalid"
+
+
+class ClientAuthenticationError(GenesisCoreLibraryIamError):
+    __template__ = "Client authentication failed"
+
+
+class IncorrectEncriptionAlgorithmError(GenesisCoreLibraryIamError):
+    __template__ = "Incorrect encription algorithm: {algorithm}"
+
+
+class InvalidGrantTypeError(GenesisCoreLibraryIamError):
+    __template__ = "Invalid grant type: {grant_type}"

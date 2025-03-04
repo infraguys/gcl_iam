@@ -20,10 +20,24 @@ import uuid
 
 class BaseToken:
 
-    def __init__(self, token, algorithm, options=None):
+    def __init__(
+        self,
+        token,
+        algorithm,
+        audience=None,
+        ignore_audience=False,
+        ignore_expiration=False,
+        verify=True,
+    ):
         super().__init__()
         self._token = token
-        self._token_info = algorithm.decode(token, options)
+        self._token_info = algorithm.decode(
+            token,
+            audience=audience,
+            ignore_audience=ignore_audience,
+            ignore_expiration=ignore_expiration,
+            verify=verify,
+        )
         self._algorithm = algorithm
 
     @property
@@ -55,8 +69,23 @@ class BaseToken:
 
 class AuthToken(BaseToken):
 
-    def __init__(self, token, algorithm, options=None):
-        super().__init__(token=token, algorithm=algorithm, options=options)
+    def __init__(
+        self,
+        token,
+        algorithm,
+        audience=None,
+        ignore_audience=False,
+        ignore_expiration=False,
+        verify=True,
+    ):
+        super().__init__(
+            token=token,
+            algorithm=algorithm,
+            audience=audience,
+            ignore_audience=ignore_audience,
+            ignore_expiration=ignore_expiration,
+            verify=verify,
+        )
 
     @property
     def autenticated_at(self):
@@ -72,8 +101,23 @@ class AuthToken(BaseToken):
 
 class IdToken(BaseToken):
 
-    def __init__(self, token, algorithm, options=None):
-        super().__init__(token=token, algorithm=algorithm, options=options)
+    def __init__(
+        self,
+        token,
+        algorithm,
+        audience=None,
+        ignore_audience=False,
+        ignore_expiration=False,
+        verify=True,
+    ):
+        super().__init__(
+            token=token,
+            algorithm=algorithm,
+            audience=audience,
+            ignore_audience=ignore_audience,
+            ignore_expiration=ignore_expiration,
+            verify=verify,
+        )
 
     @property
     def autenticated_at(self):
@@ -93,5 +137,20 @@ class IdToken(BaseToken):
 
 class RefreshToken(BaseToken):
 
-    def __init__(self, token, algorithm, options=None):
-        super().__init__(token=token, algorithm=algorithm, options=options)
+    def __init__(
+        self,
+        token,
+        algorithm,
+        audience=None,
+        ignore_audience=False,
+        ignore_expiration=False,
+        verify=True,
+    ):
+        super().__init__(
+            token=token,
+            algorithm=algorithm,
+            audience=audience,
+            ignore_audience=ignore_audience,
+            ignore_expiration=ignore_expiration,
+            verify=verify,
+        )

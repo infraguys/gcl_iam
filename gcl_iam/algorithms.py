@@ -38,12 +38,25 @@ class HS256(AbstractAlgorithm):
         super().__init__()
         self._key = key
 
-    def decode(self, data, options=None):
+    def decode(
+        self,
+        data,
+        audience=None,
+        ignore_audience=False,
+        ignore_expiration=False,
+        verify=True,
+    ):
+        options = {
+            "verify_exp": not ignore_expiration,
+            "verify_aud": not ignore_audience,
+        }
         return jwt.decode(
             data,
             key=self._key,
             algorithms=c.ALGORITHM_HS256,
             options=options,
+            audience=audience,
+            verify=verify,
         )
 
     def encode(self, data):

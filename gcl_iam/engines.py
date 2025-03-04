@@ -14,8 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import uuid
-
 from gcl_iam import tokens
 
 
@@ -23,19 +21,21 @@ class IamEngine:
 
     def __init__(self, auth_token, algorithm, driver):
         super().__init__()
-        self._token = tokens.AuthToken(auth_token, algorithm)
+        self._token_info = tokens.AuthToken(
+            auth_token,
+            algorithm,
+            ignore_audience=True,
+            ignore_expiration=False,
+            verify=True,
+        )
         self._driver = driver
+        self._introspection_info = self._driver.get_introspection_info(
+            token_info=self._token_info
+        )
+
+    @property
+    def token_info(self):
+        return self._token_info
 
     def introspection_info(self):
-        return {
-            "user_info": {},
-            "project_id": uuid.uuid4(),
-            "otp_verified": True,
-            "permission_hash": "xxxx",
-            "permissions": [
-                "service.resource.action",
-                "genesis_core.vm.create",
-                "genesis_core.vm.admin",
-                "*.*.admin",
-            ],
-        }
+        return self._introspection_info
