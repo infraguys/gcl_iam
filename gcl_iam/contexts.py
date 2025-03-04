@@ -25,10 +25,10 @@ from gcl_iam import exceptions as e
 class GenesisCoreAuthContext(contexts.ContextWithStorage):
 
     @contextlib.contextmanager
-    def iam_session(self, iam_contex):
-        self._store_iam_session(iam_contex)
+    def iam_session(self, iam_context):
+        self._store_iam_session(iam_context)
         try:
-            yield iam_contex
+            yield iam_context
         finally:
             self._remove_iam_session()
 
