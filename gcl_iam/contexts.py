@@ -15,11 +15,15 @@
 #    under the License.
 
 import contextlib
+import logging
 
 from restalchemy.common import contexts
 
 from gcl_iam import constants as c
 from gcl_iam import exceptions as e
+
+
+LOG = logging.getLogger(__name__)
 
 
 class GenesisCoreAuthContext(contexts.ContextWithStorage):
@@ -28,8 +32,10 @@ class GenesisCoreAuthContext(contexts.ContextWithStorage):
     def iam_session(self, iam_context):
         self._store_iam_session(iam_context)
         try:
+            LOG.debug("Start iam session with context: %s", iam_context)
             yield iam_context
         finally:
+            LOG.debug("End iam session with context: %s", iam_context)
             self._remove_iam_session()
 
     @property
