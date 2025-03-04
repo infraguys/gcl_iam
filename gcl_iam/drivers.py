@@ -16,9 +16,45 @@
 
 import abc
 
+import bazooka
+
+from gcl_iam import exceptions
+
 
 class AbstractAuthDriver(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def get_introspection_info(self, auth_token, algorithm):
+    def get_introspection_info(self, token_info):
         raise NotImplementedError("Not implemented")
+
+
+class DummyDriver(AbstractAuthDriver):
+    def get_introspection_info(self, token_info):
+        return {
+            "user_info": {
+                "uuid": "00000000-0000-0000-0000-000000000000",
+                "name": "admin",
+                "first_name": "Admin",
+                "last_name": "Only For Tests",
+                "email": "admin@example.com",
+            },
+            "project_id": None,
+            "otp_verified": True,
+            "permission_hash": "00000000-0000-0000-0000-000000000000",
+            "permissions": ["*.*.*"],
+        }
+
+
+class HttpDriver(AbstractAuthDriver):
+
+    def __init__(self, default_timeout=5):
+        super().__init__()
+        self._client = bazooka.Client(default_timeout=default_timeout)
+
+    def get_introspection_info(self, token_info):
+        issuer_url = token_info.issuer_url
+        introspection_url = f"{issuer_url}/actions/introspection"
+        try:
+            return self._client.get(introspection_url).json()
+        except bazooka.exceptions.RequestError:
+            raise exceptions.InvalidAuthTokenError()
