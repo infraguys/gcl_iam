@@ -42,10 +42,10 @@ class PolicyBasedControllerMixin(object):
 
         super().__init__(*args, **kwargs)
 
-    def _enforce(self, method):
+    def _enforce(self, action):
         if self.__policy_name__:
             policy_key = (
-                "genesis_core." + self.__policy_name__ + "." + method
+                "genesis_core." + self.__policy_name__ + "." + action
             )  # TODO
         else:
             policy_key = "default"
@@ -87,10 +87,8 @@ class PolicyBasedController(
         return super(PolicyBasedControllerMixin, self).create(**kwargs)
 
     def get(self, **kwargs):
-        right = self._enforce("get")
+        self._enforce_and_override_project_id_in_kwargs("get", kwargs)
         res = super(PolicyBasedControllerMixin, self).get(**kwargs)
-        if self._ctx_project_id:
-            self._force_project_id(res.project_id)
         return res
 
     def filter(self, filters):
@@ -98,20 +96,17 @@ class PolicyBasedController(
         return super(PolicyBasedController, self).filter(filters)
 
     def delete(self, uuid):
-        right = self._enforce("delete")
-        dm = super(PolicyBasedController, self).get(uuid)
-        if self._ctx_project_id:
-            self._force_project_id(dm.project_id)
+        filters = {}
+        self._enforce_and_override_project_id_in_kwargs("delete", filters)
+        dm = super(PolicyBasedController, self).get(uuid, **filters)
         dm.delete()
 
     def update(self, uuid, **kwargs):
-        right = self._enforce("delete")
+        filters = {}
+        self._enforce_and_override_project_id_in_kwargs("update", filters)
         if "project_id" in kwargs and self._ctx_project_id:
             self._force_project_id(kwargs["project_id"])
-        dm = super(PolicyBasedController, self).get(uuid)
-        if self._ctx_project_id:
-            self._force_project_id(dm.project_id)
-
+        dm = super(PolicyBasedController, self).get(uuid, **filters)
         dm.update_dm(values=kwargs)
         dm.update()
         return dm
