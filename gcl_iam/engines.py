@@ -21,9 +21,7 @@ from gcl_iam import tokens
 
 class IamEngine:
 
-    def __init__(
-        self, auth_token, algorithm, driver, service_name=None, enforcer=None
-    ):
+    def __init__(self, auth_token, algorithm, driver, enforcer=None):
         super().__init__()
         self._token_info = tokens.AuthToken(
             auth_token,
@@ -42,7 +40,7 @@ class IamEngine:
             raise exceptions.Unauthorized()
 
         self._enforcer = enforcer or enforcers.Enforcer(
-            self._introspection_info["permissions"], service=service_name
+            self._introspection_info["permissions"]
         )
 
     @property

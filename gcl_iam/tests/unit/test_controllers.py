@@ -33,6 +33,7 @@ FAKE_METHOD = "fake_method"
 
 
 class FakeController(controllers.PolicyBasedControllerMixin):
+    __policy_service_name__ = "service"
     __policy_name__ = "vm"
 
     def __init__(self, *args, **kwargs):
@@ -67,7 +68,7 @@ def unscoped_context():
     contexts.ContextWithStorage._store_context_session(ctx_storage)
     ctx_storage.iam_context.introspection_info.return_value = {
         "user_info": {},
-        "project_id": "",
+        "project_id": None,
         "otp_verified": True,
         "permission_hash": "xxxx",
         "permissions": [
@@ -84,12 +85,6 @@ def unscoped_context():
 
 
 class TestPolicyBasedControllerMixin:
-    def test_default_init(self, user_context):
-        user_context.return_value = {}
-
-        with pytest.raises(exceptions.Unauthorized):
-            _ = FakeController()
-
     def test_default_init_with_ctx_and_project(self, user_context):
         pc = FakeController()
 

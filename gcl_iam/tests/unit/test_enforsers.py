@@ -19,6 +19,7 @@ import collections
 import pytest
 from gcl_iam.enforcers import Enforcer, Grant
 from gcl_iam import exceptions
+from gcl_iam import rules
 
 # Sample permissions data
 perms = [
@@ -32,18 +33,18 @@ admin_perm = ["service.resource.action", "*.*.*"]
 
 def test_enforcer_init():
     # Test default initialization
-    enforcer = Enforcer(perms, service="genesis_core")
+    enforcer = Enforcer(perms)
 
     assert isinstance(enforcer._perms, collections.defaultdict)
 
     # Test with empty perms list
-    enforcer_empty = Enforcer([], service="genesis_core")
+    enforcer_empty = Enforcer([])
 
     assert len(enforcer_empty._perms) == 0
 
 
 def test_load_perms():
-    enforcer = Enforcer(perms, service="genesis_core")
+    enforcer = Enforcer(perms)
 
     expected_permissions = {
         "service": {"resource": set(["action"])},
@@ -54,60 +55,61 @@ def test_load_perms():
 
 
 def test_enforce_raw():
-    enforcer = Enforcer(perms, service="genesis_core")
+    enforcer = Enforcer(perms)
 
     result = enforcer.enforce_raw("service.resource.action")
 
-    assert result == Grant.REGULAR
+    assert result == Grant.ALLOW
 
 
 def test_enforce_allow():
-    enforcer = Enforcer(perms, service="genesis_core")
+    enforcer = Enforcer(perms)
 
-    result = enforcer.enforce("resource", "action", service="service")
+    result = enforcer.enforce(rules.Rule("service", "resource", "action"))
 
-    assert result == Grant.REGULAR
+    assert result == Grant.ALLOW
 
 
 def test_enforce_admin():
-    enforcer = Enforcer(admin_perm, service="genesis_core")
+    enforcer = Enforcer(admin_perm)
 
-    result = enforcer.enforce("resource", "mega")
+    result = enforcer.enforce(rules.Rule("genesis_core", "resource", "mega"))
 
-    assert result == Grant.FULL
+    assert result == Grant.ALLOW
 
 
 def test_enforce_deny():
-    enforcer = Enforcer(perms, service="genesis_core")
+    enforcer = Enforcer(perms)
 
-    result = enforcer.enforce("resource", "other")
+    result = enforcer.enforce(rules.Rule("genesis_core", "resource", "other"))
 
     assert result == Grant.DENY
 
 
 def test_enforce_comparable_permission():
-    enforcer = Enforcer(perms, service="genesis_core")
+    enforcer = Enforcer(perms)
 
     result = enforcer.enforce_raw("genesis_core.vm.create")
 
-    assert result > Grant.REGULAR
+    assert result >= Grant.ALLOW
 
 
 def test_error_raising_on_denied_rule():
-    enforcer = Enforcer(perms, service="genesis_core")
+    enforcer = Enforcer(perms)
 
     with pytest.raises(exceptions.PolicyNotAuthorized) as excinfo:
-        enforcer.enforce("resource", "other", do_raise=True)
+        enforcer.enforce(
+            rules.Rule("genesis_core", "resource", "other"), do_raise=True
+        )
 
     assert "genesis_core.resource.other" in str(excinfo.value)
 
 
 def test_error_raising_on_deny_rule_without_exception():
-    enforcer = Enforcer(perms, service="genesis_core")
+    enforcer = Enforcer(perms)
 
     result = enforcer.enforce(
-        "resource",
-        "other",
+        rules.Rule("genesis_core", "resource", "other"),
         do_raise=False,
         exc=exceptions.PolicyNotAuthorized,
     )
@@ -116,8 +118,8 @@ def test_error_raising_on_deny_rule_without_exception():
 
 
 def test_enforce_multiple_permissions():
-    enforcer = Enforcer(perms, service="genesis_core")
+    enforcer = Enforcer(perms)
 
     result = enforcer.enforce_raw("genesis_core.vm.*")
 
-    assert result == Grant.FULL
+    assert result == Grant.ALLOW
