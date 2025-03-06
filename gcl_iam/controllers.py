@@ -20,12 +20,13 @@ from restalchemy.api import controllers
 from restalchemy.common import contexts
 from restalchemy.dm import types
 
-from gcl_iam import enforcers
 from gcl_iam import exceptions
+from gcl_iam import rules
 
 
 class PolicyBasedControllerMixin(object):
 
+    __policy_service_name__ = ""
     __policy_name__ = None
 
     def __init__(self, *args, **kwargs):
@@ -41,7 +42,12 @@ class PolicyBasedControllerMixin(object):
 
     def _enforce(self, action):
         return self._enforcer.enforce(
-            self.__policy_name__ or "default", action, do_raise=True
+            rules.Rule(
+                self.__policy_service_name__,
+                self.__policy_name__ or "default",
+                action,
+            ),
+            do_raise=True,
         )
 
     def _force_project_id(self, project_id):
