@@ -66,6 +66,10 @@ class BaseToken:
     def user_uuid(self):
         return uuid.UUID(self._token_info["sub"])
 
+    @property
+    def token(self):
+        return self._token
+
 
 class AuthToken(BaseToken):
 

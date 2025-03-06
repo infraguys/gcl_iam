@@ -53,8 +53,11 @@ class HttpDriver(AbstractAuthDriver):
 
     def get_introspection_info(self, token_info):
         issuer_url = token_info.issuer_url
-        introspection_url = f"{issuer_url}/actions/introspection"
+        introspection_url = f"{issuer_url}/actions/introspect"
         try:
-            return self._client.get(introspection_url).json()
+            return self._client.get(
+                introspection_url,
+                headers={"Authorization": f"Bearer {token_info.token}"},
+            ).json()
         except bazooka.exceptions.RequestError:
             raise exceptions.InvalidAuthTokenError()
