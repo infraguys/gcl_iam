@@ -15,6 +15,7 @@
 #    under the License.
 
 from gcl_iam import enforcers
+from gcl_iam import exceptions
 from gcl_iam import tokens
 
 
@@ -35,6 +36,10 @@ class IamEngine:
         self._introspection_info = self._driver.get_introspection_info(
             token_info=self._token_info
         )
+
+        # Forbid requests without auth or without project scope
+        if not self._introspection_info:
+            raise exceptions.Unauthorized()
 
         self._enforcer = enforcer or enforcers.Enforcer(
             self._introspection_info["permissions"], service=service_name

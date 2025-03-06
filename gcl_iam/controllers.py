@@ -34,11 +34,9 @@ class PolicyBasedControllerMixin(object):
             contexts.get_context().iam_context.introspection_info()
         )
 
-        # Forbid requests without auth or without project scope
-        if not self._introspection:
-            raise exceptions.Unauthorized()
-
         self._ctx_project_id = self._introspection.get("project_id", None)
+        if isinstance(self._ctx_project_id, str):
+            self._ctx_project_id = uuid.UUID(self._ctx_project_id)
         self._enforcer = contexts.get_context().iam_context.enforcer
 
     def _enforce(self, action):
