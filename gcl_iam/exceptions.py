@@ -66,13 +66,9 @@ class InvalidGrantTypeError(GenesisCoreLibraryIamError):
     __template__ = "Invalid grant type: {grant_type}"
 
 
-class PolicyNotAuthorized(GenesisCoreLibraryIamError):
-    __template__ = "Policy rule {rule} is disallowed."
-
-
-class Unauthorized(GenesisCoreLibraryIamError):
+class Unauthorized(ClientAuthenticationError):
     __template__ = "The request you have made requires authentication."
 
 
-class Forbidden(GenesisCoreLibraryIamError):
+class Forbidden(CommonForbiddenError):
     __template__ = "The request you have made is forbidden."

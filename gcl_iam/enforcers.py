@@ -16,8 +16,12 @@
 
 import collections
 from enum import Enum
+import logging
 
 from gcl_iam import exceptions
+
+
+LOG = logging.getLogger(__name__)
 
 
 class OrderedEnum(Enum):
@@ -43,15 +47,19 @@ class OrderedEnum(Enum):
         return NotImplemented
 
 
-class Grant(OrderedEnum):
+class BasicOrderedGrant(OrderedEnum):
     def __bool__(self):
         if self.value > 0:
             return True
         return False
 
+
+class Grant(BasicOrderedGrant):
+
     DENY = 0
-    ALLOW = 1
-    ADMIN = 100
+    REGULAR = 10
+    OPERATOR = 50
+    FULL = 100
 
 
 class PermissionLevel(collections.defaultdict):
@@ -66,12 +74,12 @@ class PermissionLevel(collections.defaultdict):
         return super().__getitem__(key)
 
 
-class Permissions(set):
+class BasicPermission(set):
     def get_grant_level(self, name):
         if "*" in self:
-            return Grant.ADMIN
+            return Grant.FULL
         if name in self:
-            return Grant.ALLOW
+            return Grant.REGULAR
         return Grant.DENY
 
 
@@ -108,21 +116,33 @@ class Enforcer(object):
 
         # Check if a wildcard permission applies to a resource
         result = enforcer.enforce("genesis_core.*.action")
-        print(result)  # Output: Grant.ADMIN
+        print(result)  # Output: Grant.FULL
     """
 
-    def __init__(self, perms):
-        self._perms = PermissionLevel(lambda: PermissionLevel(Permissions))
+    def __init__(
+        self,
+        perms,
+        service,
+        perm_class=BasicPermission,
+        level_class=PermissionLevel,
+    ):
+        self._service = service
+        self._perms = level_class(lambda: level_class(perm_class))
         self._load_perms(perms)
 
     def _load_perms(self, perms):
         for p in perms:
-            service, res, perm = p.split(".")
+            service, res, perm = p.split(".", maxsplit=2)
             # Add the rule to a list of perms
             self._perms[service][res].add(perm)
 
-    def enforce(self, rule, do_raise=False, exc=None):
-        service, res, perm = rule.split(".")
+    def enforce_raw(self, rule, do_raise=False, exc=None):
+        service, res, perm = rule.split(".", maxsplit=2)
+        return self.enforce(res, perm, service, do_raise, exc)
+
+    def enforce(self, res, perm, service=None, do_raise=False, exc=None):
+        service = service or self._service
+
         result = Grant.DENY
         if resource := self._perms.get(service):
             if permission := resource.get(res):
@@ -130,8 +150,10 @@ class Enforcer(object):
 
         if do_raise and not result:
             if exc:
-                raise exc(rule=rule)
+                raise exc(rule=(".".join((service, res, perm))))
 
-            raise exceptions.PolicyNotAuthorized(rule=rule)
+            raise exceptions.PolicyNotAuthorized(
+                rule=(".".join((service, res, perm)))
+            )
 
         return result

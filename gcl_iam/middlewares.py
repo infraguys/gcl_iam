@@ -59,6 +59,7 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
     def __init__(
         self,
         application,
+        service_name,
         token_algorithm,
         context_class=contexts.GenesisCoreAuthContext,
         context_kwargs=None,
@@ -70,6 +71,7 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
             context_class=context_class,
             context_kwargs=context_kwargs,
         )
+        self._service_name = service_name
         self._token_algorithm = token_algorithm
         self._iam_engine_driver = iam_engine_driver or drivers.HttpDriver()
         self._skip_auth_endpoints = skip_auth_endpoints or []
@@ -97,12 +99,14 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
                         auth_token=self._get_auth_token(req),
                         algorithm=self._token_algorithm,
                         driver=self._iam_engine_driver,
+                        service_name=self._service_name,
                     )
                 except Exception:
                     LOG.exception("Invalid auth token by reason:")
                     raise exc.InvalidAuthTokenError()
 
                 with ctx.iam_session(iam_context):
+                    req.iam_engine = iam_context
                     return super()._get_response(ctx, req)
 
 

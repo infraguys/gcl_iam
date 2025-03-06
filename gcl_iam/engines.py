@@ -14,12 +14,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from gcl_iam import enforcers
 from gcl_iam import tokens
 
 
 class IamEngine:
 
-    def __init__(self, auth_token, algorithm, driver):
+    def __init__(
+        self, auth_token, algorithm, driver, service_name=None, enforcer=None
+    ):
         super().__init__()
         self._token_info = tokens.AuthToken(
             auth_token,
@@ -33,9 +36,17 @@ class IamEngine:
             token_info=self._token_info
         )
 
+        self._enforcer = enforcer or enforcers.Enforcer(
+            self._introspection_info["permissions"], service=service_name
+        )
+
     @property
     def token_info(self):
         return self._token_info
 
     def introspection_info(self):
         return self._introspection_info
+
+    @property
+    def enforcer(self):
+        return self._enforcer
