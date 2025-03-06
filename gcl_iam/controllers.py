@@ -29,6 +29,7 @@ class PolicyBasedControllerMixin(object):
     __policy_name__ = None
 
     def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._introspection = (
             contexts.get_context().iam_context.introspection_info()
         )
@@ -38,19 +39,12 @@ class PolicyBasedControllerMixin(object):
             raise exceptions.Unauthorized()
 
         self._ctx_project_id = self._introspection.get("project_id", None)
-        self._enforcer = enforcers.Enforcer(self._introspection["permissions"])
-
-        super().__init__(*args, **kwargs)
+        self._enforcer = contexts.get_context().iam_context.enforcer
 
     def _enforce(self, action):
-        if self.__policy_name__:
-            policy_key = (
-                "genesis_core." + self.__policy_name__ + "." + action
-            )  # TODO
-        else:
-            policy_key = "default"
-
-        return self._enforcer.enforce(policy_key, do_raise=True)
+        return self._enforcer.enforce(
+            self.__policy_name__ or "default", action, do_raise=True
+        )
 
     def _force_project_id(self, project_id):
         # ghosts converts project ids to true UUIDs with dashes
@@ -87,12 +81,12 @@ class PolicyBasedController(
         return super(PolicyBasedControllerMixin, self).create(**kwargs)
 
     def get(self, **kwargs):
-        self._enforce_and_override_project_id_in_kwargs("get", kwargs)
+        self._enforce_and_override_project_id_in_kwargs("read", kwargs)
         res = super(PolicyBasedControllerMixin, self).get(**kwargs)
         return res
 
     def filter(self, filters):
-        self._enforce_and_override_project_id_in_kwargs("get", filters)
+        self._enforce_and_override_project_id_in_kwargs("read", filters)
         return super(PolicyBasedController, self).filter(filters)
 
     def delete(self, uuid):
@@ -122,11 +116,11 @@ class NestedPolicyBasedController(
         return super(PolicyBasedControllerMixin, self).create(**kwargs)
 
     def get(self, **kwargs):
-        self._enforce("get")
+        self._enforce("read")
         return super(PolicyBasedControllerMixin, self).get(**kwargs)
 
     def filter(self, parent_resource, filters):
-        self._enforce("get")
+        self._enforce("read")
         return super(NestedPolicyBasedController, self).filter(
             parent_resource=parent_resource, filters=filters
         )
@@ -144,20 +138,30 @@ class NestedPolicyBasedController(
         )
 
 
-class PolicyBasedWithoutProjectController(PolicyBasedController):
+class PolicyBasedWithoutProjectController(
+    PolicyBasedControllerMixin, controllers.BaseResourceController
+):
+
+    def create(self, **kwargs):
+        self._enforce("create")
+        return super().create(**kwargs)
 
     def get(self, **kwargs):
-        self._enforce("get")
-        return super(PolicyBasedControllerMixin, self).get(**kwargs)
+        self._enforce("read")
+        return super().get(**kwargs)
+
+    def filter(self, filters):
+        self._enforce("read")
+        return super().filter(filters=filters)
 
     def delete(self, uuid):
         self._enforce("delete")
-        dm = super(PolicyBasedController, self).get(uuid)
+        dm = super().get(uuid)
         dm.delete()
 
     def update(self, uuid, **kwargs):
         self._enforce("update")
-        dm = super(PolicyBasedController, self).get(uuid)
+        dm = super().get(uuid)
 
         dm.update_dm(values=kwargs)
         dm.update()

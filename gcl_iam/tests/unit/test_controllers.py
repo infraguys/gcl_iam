@@ -138,10 +138,10 @@ class TestPolicyBasedControllerMixin:
         pc._enforce_and_authorize_project_id("create", FAKE_PROJECT_ID)
 
     def test_auth_project_id_method_forbidden(self, user_context):
-        with pytest.raises(exceptions.PolicyNotAuthorized):
+        with pytest.raises(exceptions.Forbidden):
             pc = FakeController()
             pc._enforce_and_authorize_project_id(
-                "strange_create", FAKE_PROJECT_ID
+                "strange_create", FAKE_PROJECT_ID_2
             )
 
     def test_auth_non_uuid_project_id_allowed(self, user_context):
