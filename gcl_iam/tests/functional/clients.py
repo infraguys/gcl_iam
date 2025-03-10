@@ -14,8 +14,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
+import os
+import uuid
+
 import bazooka
 from bazooka import common
+import jwt
+
+
+SECRET = "secret"
 
 
 class GenesisCoreAuth:
@@ -89,17 +97,45 @@ class GenesisCoreTestRESTClient(common.RESTClientMixIn):
         return result
 
     def get(self, url, **kwargs):
-        headers = self._insert_auth_header(kwargs.get("headers", {}))
+        headers = self._insert_auth_header(kwargs.pop("headers", {}))
         return self._client.get(url, headers=headers, **kwargs)
 
     def post(self, url, **kwargs):
-        headers = self._insert_auth_header(kwargs.get("headers", {}))
+        headers = self._insert_auth_header(kwargs.pop("headers", {}))
         return self._client.post(url, headers=headers, **kwargs)
 
     def put(self, url, **kwargs):
-        headers = self._insert_auth_header(kwargs.get("headers", {}))
+        headers = self._insert_auth_header(kwargs.pop("headers", {}))
         return self._client.put(url, headers=headers, **kwargs)
 
     def delete(self, url, **kwargs):
-        headers = self._insert_auth_header(kwargs.get("headers", {}))
+        headers = self._insert_auth_header(kwargs.pop("headers", {}))
         return self._client.delete(url, headers=headers, **kwargs)
+
+
+class DummyGenesisCoreTestRESTClient(GenesisCoreTestRESTClient):
+    def __init__(self, endpoint: str, auth=None, timeout: int = 5):
+        auth = auth or GenesisCoreAuth("user", "password")
+        self._generate_token()
+        super().__init__(endpoint=endpoint, auth=auth, timeout=timeout)
+
+    def _generate_token(self):
+        data = {
+            "exp": int(datetime.datetime.now().timestamp() + 3600),
+            "iat": int(datetime.datetime.now().timestamp()),
+            "auth_time": int(datetime.datetime.now().timestamp()),
+            "jti": str(uuid.uuid4()),
+            "iss": "test_issuer",
+            "aud": "test_audience",
+            "sub": str(uuid.uuid4()),
+            "typ": "test_type",
+        }
+        self._fake_token = jwt.encode(
+            data, os.getenv("HS256_KEY", SECRET), algorithm="HS256"
+        )
+        return self._fake_token
+
+    def _insert_auth_header(self, headers):
+        result = headers.copy()
+        result.update({"Authorization": f"Bearer {self._fake_token}"})
+        return result

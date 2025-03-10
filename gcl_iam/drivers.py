@@ -29,19 +29,33 @@ class AbstractAuthDriver(metaclass=abc.ABCMeta):
 
 
 class DummyDriver(AbstractAuthDriver):
+    def __init__(self, *args, **kwargs):
+        self.reset()
+
+    def reset(self):
+        self.user_uuid = "00000000-0000-0000-0000-000000000000"
+        self.user_name = "admin"
+        self.user_email = "admin@example.com"
+        self.user_first_name = "Admin"
+        self.user_last_name = "Only For Tests"
+        self.project_id = None
+        self.otp_verified = True
+        self.permission_hash = "00000000-0000-0000-0000-000000000000"
+        self.permissions = ["*.*.*"]
+
     def get_introspection_info(self, token_info):
         return {
             "user_info": {
-                "uuid": "00000000-0000-0000-0000-000000000000",
-                "name": "admin",
-                "first_name": "Admin",
-                "last_name": "Only For Tests",
-                "email": "admin@example.com",
+                "uuid": self.user_uuid,
+                "name": self.user_name,
+                "first_name": self.user_first_name,
+                "last_name": self.user_last_name,
+                "email": self.user_email,
             },
-            "project_id": None,
-            "otp_verified": True,
-            "permission_hash": "00000000-0000-0000-0000-000000000000",
-            "permissions": ["*.*.*"],
+            "project_id": self.project_id,
+            "otp_verified": self.otp_verified,
+            "permission_hash": self.permission_hash,
+            "permissions": self.permissions,
         }
 
 
