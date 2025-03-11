@@ -141,11 +141,23 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
             json={"name": name, "description": "Functional test role"},
         ).json()
 
+    def create_or_get_role(self, name):
+        url = self.build_collection_uri(["iam/roles/"])
+        for role in self.get(url=url, params={"name": name}).json():
+            return role
+        return self.create_role(name=name)
+
     def create_permission(self, name):
         return self.post(
             f"{self._endpoint}iam/permissions/",
             json={"name": name, "description": "Functional test permission"},
         ).json()
+
+    def create_or_get_permission(self, name):
+        url = self.build_collection_uri(["iam/permissions/"])
+        for perm in self.get(url=url, params={"name": name}).json():
+            return perm
+        return self.create_permission(name=name)
 
     def bind_permission_to_role(self, permission_uuid, role_uuid):
         permission_uri = f"/v1/iam/permissions/{permission_uuid}"
@@ -170,6 +182,14 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
             f"{self._endpoint}iam/role_bindings/",
             json=body,
         ).json()
+
+    def create_or_get_binding(self, permission_uuid, role_uuid):
+        url = self.build_collection_uri(["iam/permission_bindings/"])
+        for bind in self.get(
+            url=url, params={"permission": permission_uuid, "role": role_uuid}
+        ).json():
+            return bind
+        return self.bind_permission_to_role(permission_uuid, role_uuid)
 
     def set_permissions_to_user(
         self,
