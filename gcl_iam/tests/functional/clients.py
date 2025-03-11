@@ -206,7 +206,8 @@ class GenesisCoreTestRESTClient(GenesisCoreTestNoAuthRESTClient):
         self._auth_cache = self.authenticate()
 
     def authenticate(self):
-        if not self._auth_cache:
+        value = getattr(self, "_auth_cache", None)
+        if value is None:
             self._auth_cache = self._client.post(
                 self._auth.get_token_url(self._endpoint),
                 self._auth.get_password_auth_params(),
