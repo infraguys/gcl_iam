@@ -18,6 +18,7 @@ import uuid
 
 from restalchemy.api import controllers
 from restalchemy.common import contexts
+from restalchemy.dm import filters
 from restalchemy.dm import types
 
 from gcl_iam import exceptions
@@ -51,7 +52,8 @@ class PolicyBasedControllerMixin(object):
         )
 
     def _force_project_id(self, project_id):
-        # ghosts converts project ids to true UUIDs with dashes
+        if isinstance(project_id, filters.AbstractClause):
+            project_id = project_id.value
         if not isinstance(project_id, uuid.UUID):
             project_id = uuid.UUID(project_id)
         if project_id != self._ctx_project_id:
