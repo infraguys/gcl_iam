@@ -21,6 +21,9 @@ class Rule:
         self.res = res
         self.perm = perm
 
+    def __str__(self):
+        return f"{self.service}.{self.res}.{self.perm}"
+
     @classmethod
     def from_raw(cls, rule):
         service, res, perm = rule.split(".", maxsplit=2)
