@@ -241,7 +241,6 @@ class GenesisCoreTestRESTClient(GenesisCoreTestNoAuthRESTClient):
 class DummyGenesisCoreTestRESTClient(GenesisCoreTestRESTClient):
     def __init__(self, endpoint: str, auth=None, timeout: int = 5):
         auth = auth or GenesisCoreAuth("user", "password")
-        self._generate_token()
         super().__init__(endpoint=endpoint, auth=auth, timeout=timeout)
 
     def _generate_token(self):
@@ -255,12 +254,12 @@ class DummyGenesisCoreTestRESTClient(GenesisCoreTestRESTClient):
             "sub": str(uuid.uuid4()),
             "typ": "test_type",
         }
-        self._fake_token = jwt.encode(
+        return jwt.encode(
             data, os.getenv("HS256_KEY", SECRET), algorithm="HS256"
         )
-        return self._fake_token
 
-    def _insert_auth_header(self, headers):
-        result = headers.copy()
-        result.update({"Authorization": f"Bearer {self._fake_token}"})
-        return result
+    def authenticate(self):
+        value = getattr(self, "_auth_cache", None)
+        if value is None:
+            self._auth_cache = {"access_token": self._generate_token()}
+        return self._auth_cache
