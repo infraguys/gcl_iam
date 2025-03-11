@@ -35,8 +35,12 @@ class GenesisCoreAuth:
         client_uuid: str = "00000000-0000-0000-0000-000000000000",
         client_id: str = "GenesisCoreClientId",
         client_secret: str = "GenesisCoreClientSecret",
+        uuid: str = "00000000-0000-0000-0000-000000000000",
+        email: str = "admin@genesis.com",
     ):
         super().__init__()
+        self._uuid = uuid
+        self._email = email
         self._username = username
         self._password = password
         self._client_uuid = client_uuid
@@ -48,6 +52,34 @@ class GenesisCoreAuth:
             f"{common.force_last_slash(endpoint)}iam/clients/"
             f"{self._client_uuid}/actions/get_token/invoke"
         )
+
+    @property
+    def uuid(self):
+        return self._uuid
+
+    @property
+    def email(self):
+        return self._email
+
+    @property
+    def username(self):
+        return self._username
+
+    @property
+    def password(self):
+        return self._password
+
+    @property
+    def client_uuid(self):
+        return self._client_uuid
+
+    @property
+    def client_id(self):
+        return self._client_id
+
+    @property
+    def client_secret(self):
+        return self._client_secret
 
     def get_password_auth_params(self):
         return {
@@ -65,15 +97,113 @@ class GenesisCoreAuth:
         }
 
 
-class GenesisCoreTestRESTClient(common.RESTClientMixIn):
+class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
 
-    def __init__(self, endpoint: str, auth: GenesisCoreAuth, timeout: int = 5):
+    def __init__(self, endpoint: str, timeout: int = 5):
         super().__init__()
         self._endpoint = endpoint
         self._timeout = timeout
-        self._auth = auth
         self._client = bazooka.Client(default_timeout=timeout)
-        self._auth_cache = None
+
+    def build_resource_uri(self, paths, init_uri=None):
+        return self._build_resource_uri(paths, init_uri=init_uri)
+
+    def build_collection_uri(self, paths, init_uri=None):
+        return self._build_collection_uri(paths, init_uri=init_uri)
+
+    def get(self, url, **kwargs):
+        return self._client.get(url, **kwargs)
+
+    def post(self, url, **kwargs):
+        return self._client.post(url, **kwargs)
+
+    def put(self, url, **kwargs):
+        return self._client.put(url, **kwargs)
+
+    def delete(self, url, **kwargs):
+        return self._client.delete(url, **kwargs)
+
+    def create_user(self, username, password):
+        return self._client.post(
+            f"{self._endpoint}iam/users/",
+            json={
+                "username": username,
+                "password": password,
+                "first_name": "FirstName",
+                "last_name": "LastName",
+                "email": f"{username}@genesis.com",
+            },
+        ).json()
+
+    def create_role(self, name):
+        return self.post(
+            f"{self._endpoint}iam/roles/",
+            json={"name": name, "description": "Functional test role"},
+        ).json()
+
+    def create_permission(self, name):
+        return self.post(
+            f"{self._endpoint}iam/permissions/",
+            json={"name": name, "description": "Functional test permission"},
+        ).json()
+
+    def bind_permission_to_role(self, permission_uuid, role_uuid):
+        permission_uri = f"/v1/iam/permissions/{permission_uuid}"
+        role_uri = f"/v1/iam/roles/{role_uuid}"
+
+        return self.post(
+            f"{self._endpoint}iam/permission_bindings/",
+            json={"permission": permission_uri, "role": role_uri},
+        ).json()
+
+    def bind_role_to_user(self, role_uuid, user_uuid, project_id=None):
+
+        body = {
+            "role": f"/v1/iam/roles/{role_uuid}",
+            "user": f"/v1/iam/users/{user_uuid}",
+        }
+
+        if project_id is not None:
+            body["project"] = f"/v1/iam/projects/{project_id}"
+
+        return self.post(
+            f"{self._endpoint}iam/role_bindings/",
+            json=body,
+        ).json()
+
+    def set_permissions_to_user(
+        self,
+        user_uuid: str,
+        permissions: list[str] = None,
+        project_id: str = None,
+    ):
+        permissions = permissions or []
+
+        role = self.create_role(name="TestRole1")
+
+        for permission_name in permissions:
+            permission = self.create_permission(name=str(permission_name))
+            self.bind_permission_to_role(
+                permission_uuid=permission["uuid"],
+                role_uuid=role["uuid"],
+            )
+
+        self.bind_role_to_user(
+            role_uuid=role["uuid"],
+            user_uuid=user_uuid,
+            project_id=project_id,
+        )
+
+
+class GenesisCoreTestRESTClient(GenesisCoreTestNoAuthRESTClient):
+
+    def __init__(self, endpoint: str, auth: GenesisCoreAuth, timeout: int = 5):
+        super().__init__(
+            endpoint=endpoint,
+            timeout=timeout,
+        )
+        self._auth = auth
+        self._auth_cache = self.authenticate()
 
     def authenticate(self):
         if not self._auth_cache:
@@ -82,12 +212,6 @@ class GenesisCoreTestRESTClient(common.RESTClientMixIn):
                 self._auth.get_password_auth_params(),
             ).json()
         return self._auth_cache
-
-    def build_resource_uri(self, paths, init_uri=None):
-        return self._build_resource_uri(paths, init_uri=init_uri)
-
-    def build_collection_uri(self, paths, init_uri=None):
-        return self._build_collection_uri(paths, init_uri=init_uri)
 
     def _insert_auth_header(self, headers):
         result = headers.copy()
@@ -121,7 +245,7 @@ class DummyGenesisCoreTestRESTClient(GenesisCoreTestRESTClient):
 
     def _generate_token(self):
         data = {
-            "exp": int(datetime.datetime.now().timestamp() + 3600),
+            "exp": int(datetime.datetime.now().timestamp() + 360000),
             "iat": int(datetime.datetime.now().timestamp()),
             "auth_time": int(datetime.datetime.now().timestamp()),
             "jti": str(uuid.uuid4()),
