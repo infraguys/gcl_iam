@@ -122,7 +122,7 @@ class ErrorsHandlerMiddleware(errors_mw.ErrorsHandlerMiddleware):
             )
         elif isinstance(e, exc.InvalidAuthTokenError):
             return req.ResponseClass(
-                status=http_client.BAD_REQUEST,
+                status=http_client.UNAUTHORIZED,
                 json={
                     "error": "invalid_token",
                     "error_description": str(e),
@@ -136,6 +136,7 @@ class ErrorsHandlerMiddleware(errors_mw.ErrorsHandlerMiddleware):
                     "error": "invalid_grant",
                     "error_description": str(e),
                 },
+                headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
             )
         elif isinstance(e, self.forbidden_exc):
             return req.ResponseClass(
