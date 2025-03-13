@@ -188,6 +188,13 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
         )
         return None if result.status_code == 204 else result.json()
 
+    def get_user_roles(self, user_uuid):
+        return self.get(
+            self.build_resource_uri(
+                ["iam/users/", user_uuid, "actions/get_my_roles"]
+            ),
+        ).json()
+
     def create_role(self, name):
         return self.post(
             f"{self._endpoint}iam/roles/",
