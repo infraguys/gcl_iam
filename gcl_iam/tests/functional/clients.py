@@ -219,22 +219,28 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
             return perm
         return self.create_permission(name=name)
 
-    def bind_permission_to_role(self, permission_uuid, role_uuid):
+    def bind_permission_to_role(self, permission_uuid, role_uuid, **kwargs):
         permission_uri = f"/v1/iam/permissions/{permission_uuid}"
         role_uri = f"/v1/iam/roles/{role_uuid}"
+        body = {"permission": permission_uri, "role": role_uri}
+        body.update(kwargs)
 
         return self.post(
             f"{self._endpoint}iam/permission_bindings/",
-            json={"permission": permission_uri, "role": role_uri},
+            json=body,
         ).json()
 
-    def create_or_get_permission_binding(self, permission_uuid, role_uuid):
+    def create_or_get_permission_binding(
+        self, permission_uuid, role_uuid, **kwargs
+    ):
         url = self.build_collection_uri(["iam/permission_bindings/"])
-        for bind in self.get(
-            url=url, params={"permission": permission_uuid, "role": role_uuid}
-        ).json():
+        params = {"permission": permission_uuid, "role": role_uuid}
+        params.update(kwargs)
+        for bind in self.get(url=url, params=params).json():
             return bind
-        return self.bind_permission_to_role(permission_uuid, role_uuid)
+        return self.bind_permission_to_role(
+            permission_uuid, role_uuid, **kwargs
+        )
 
     # TODO(efrolov): delete after refactoring dependencies
     create_or_get_binding = create_or_get_permission_binding
@@ -273,6 +279,12 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
             json=body,
         ).json()
 
+    def create_or_get_organization(self, uuid, **kwargs):
+        url = self.build_collection_uri(["iam/organizations/"])
+        for org in self.get(url=url, params={"uuid": uuid}).json():
+            return org
+        return self.create_organization(uuid=uuid, **kwargs)
+
     def list_organizations(self, **kwargs):
         params = kwargs.copy()
         return self.get(
@@ -305,6 +317,15 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
             self.build_collection_uri(["iam/projects/"]),
             json=body,
         ).json()
+
+    def create_or_get_project(self, organization_uuid, name, **kwargs):
+        url = self.build_collection_uri(["iam/projects/"])
+        params = {"organization": organization_uuid, "name": name}
+        for proj in self.get(url=url, params=params).json():
+            return proj
+        return self.create_project(
+            organization_uuid=organization_uuid, name=name, **kwargs
+        )
 
     def create_organization_member(
         self, organization_uuid, user_uuid, role, **kwargs
