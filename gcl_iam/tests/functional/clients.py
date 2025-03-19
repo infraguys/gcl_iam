@@ -20,6 +20,7 @@ import uuid as sys_uuid
 
 import bazooka
 from bazooka import common
+from bazooka import exceptions as bazooka_exceptions
 import jwt
 
 
@@ -435,6 +436,24 @@ class GenesisCoreTestRESTClient(GenesisCoreTestNoAuthRESTClient):
     def delete(self, url, **kwargs):
         headers = self._insert_auth_header(kwargs.pop("headers", {}))
         return self._client.delete(url, headers=headers, **kwargs)
+
+
+class GenericAutoRefreshRESTClient(GenesisCoreTestRESTClient):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._client.original_request = self._client.request
+        self._client.request = self._request
+
+    def reauthenticate(self):
+        self._auth_cache = None
+        self.authenticate()
+
+    def _request(self, *args, **kwargs):
+        try:
+            return self._client.original_request(*args, **kwargs)
+        except bazooka_exceptions.UnauthorizedError:
+            self.reauthenticate()
+            return self._client.original_request(*args, **kwargs)
 
 
 class DummyGenesisCoreTestRESTClient(GenesisCoreTestRESTClient):
