@@ -121,6 +121,10 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
         self._timeout = timeout
         self._client = bazooka.Client(default_timeout=timeout)
 
+    @property
+    def endpoint(self):
+        return self._endpoint
+
     def build_resource_uri(self, paths, init_uri=None):
         return self._build_resource_uri(paths, init_uri=init_uri)
 
@@ -195,10 +199,17 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
             ),
         ).json()
 
-    def create_role(self, name):
+    def create_role(self, name, description="Functional test role", **kwargs):
+        body = kwargs.copy()
+        body.update(
+            {
+                "name": name,
+                "description": description,
+            }
+        )
         return self.post(
             f"{self._endpoint}iam/roles/",
-            json={"name": name, "description": "Functional test role"},
+            json=body,
         ).json()
 
     def create_or_get_role(self, name):
