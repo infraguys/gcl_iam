@@ -277,10 +277,15 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
         url = self.build_collection_uri(["iam/role_bindings/"])
         params = {"role": role_uuid, "user": user_uuid}
         if project_id is not None:
-            params["project_id"] = project_id
+            params["project"] = project_id
         for bind in self.get(url=url, params=params).json():
             return bind
         return self.bind_role_to_user(role_uuid, user_uuid, project_id)
+
+    def get_role_bindings_by_project(self, role_uuid, project_id):
+        url = self.build_collection_uri(["iam/role_bindings/"])
+        params = {"role": role_uuid, "project": project_id}
+        return self.get(url=url, params=params).json()
 
     def create_organization(self, name, **kwargs):
         body = kwargs.copy()
