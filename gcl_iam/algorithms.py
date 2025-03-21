@@ -15,10 +15,15 @@
 #    under the License.
 
 import abc
+import logging
 
 import jwt
 
 from gcl_iam import constants as c
+from gcl_iam import exceptions as exc
+
+
+LOG = logging.getLogger(__name__)
 
 
 class AbstractAlgorithm(metaclass=abc.ABCMeta):
@@ -50,14 +55,18 @@ class HS256(AbstractAlgorithm):
             "verify_exp": not ignore_expiration,
             "verify_aud": not ignore_audience,
         }
-        return jwt.decode(
-            data,
-            key=self._key,
-            algorithms=c.ALGORITHM_HS256,
-            options=options,
-            audience=audience,
-            verify=verify,
-        )
+        try:
+            return jwt.decode(
+                data,
+                key=self._key,
+                algorithms=c.ALGORITHM_HS256,
+                options=options,
+                audience=audience,
+                verify=verify,
+            )
+        except jwt.exceptions.DecodeError:
+            LOG.exception("Invalid token by reason:")
+            raise exc.CredentialsAreInvalidError()
 
     def encode(self, data):
         return jwt.encode(data, key=self._key, algorithm=c.ALGORITHM_HS256)
