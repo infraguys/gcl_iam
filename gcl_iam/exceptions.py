@@ -19,6 +19,7 @@ from izulu import root
 
 
 class GenesisCoreLibraryIamError(root.Error):
+    __toggles__ = root.Toggles.DEFAULT ^ root.Toggles.FORBID_UNANNOTATED_FIELDS
     __template__ = "Generic Genesis Core Library IAM Error"
 
 
