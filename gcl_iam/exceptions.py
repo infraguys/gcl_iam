@@ -47,8 +47,12 @@ class CredentialsAreInvalidError(GenesisCoreLibraryIamError):
     __template__ = "The provided credentials are invalid"
 
 
-class OTPAlreadyEnabled(CredentialsAreInvalidError):
+class OTPAlreadyEnabledError(CredentialsAreInvalidError):
     __template__ = "OTP is already enabled for this account"
+
+
+class OTPInvalidCodeError(GenesisCoreLibraryIamError):
+    __template__ = "The provided code is invalid"
 
 
 class InvalidRefreshTokenError(CredentialsAreInvalidError):
