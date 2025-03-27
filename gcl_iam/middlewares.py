@@ -85,6 +85,11 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
             return header_value.split(" ")[1]
         raise exc.InvalidAuthTokenError()
 
+    def _get_otp_code(self, req):
+        if "X-OTP" not in req.headers:
+            return None
+        return int(req.headers["X-OTP"])
+
     def _get_response(self, ctx, req):
         with ctx.context_manager():
             if self._should_skip_auth(req):
@@ -96,7 +101,10 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
                         auth_token=self._get_auth_token(req),
                         algorithm=self._token_algorithm,
                         driver=self._iam_engine_driver,
+                        otp_code=self._get_otp_code(req),
                     )
+                except exc.OTPInvalidCodeError:
+                    raise
                 except Exception:
                     LOG.exception("Invalid auth token by reason:")
                     raise exc.InvalidAuthTokenError()

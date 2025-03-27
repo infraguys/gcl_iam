@@ -21,7 +21,9 @@ from gcl_iam import tokens
 
 class IamEngine:
 
-    def __init__(self, auth_token, algorithm, driver, enforcer=None):
+    def __init__(
+        self, auth_token, algorithm, driver, enforcer=None, otp_code=None
+    ):
         super().__init__()
         self._token_info = tokens.AuthToken(
             auth_token,
@@ -32,7 +34,8 @@ class IamEngine:
         )
         self._driver = driver
         self._introspection_info = self._driver.get_introspection_info(
-            token_info=self._token_info
+            token_info=self._token_info,
+            otp_code=otp_code,
         )
 
         # Forbid requests without auth or without project scope

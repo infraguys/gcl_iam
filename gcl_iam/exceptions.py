@@ -51,8 +51,8 @@ class OTPAlreadyEnabledError(CredentialsAreInvalidError):
     __template__ = "OTP is already enabled for this account"
 
 
-class OTPInvalidCodeError(GenesisCoreLibraryIamError):
-    __template__ = "The provided code is invalid"
+class OTPNotEnabledError(CredentialsAreInvalidError):
+    __template__ = "OTP is not enabled for this account"
 
 
 class InvalidRefreshTokenError(CredentialsAreInvalidError):
@@ -65,6 +65,10 @@ class InvalidAuthTokenError(CredentialsAreInvalidError):
 
 class ClientAuthenticationError(GenesisCoreLibraryIamError):
     __template__ = "Client authentication failed"
+
+
+class OTPInvalidCodeError(ClientAuthenticationError):
+    __template__ = "The provided otp code is invalid"
 
 
 class IncorrectEncriptionAlgorithmError(GenesisCoreLibraryIamError):
