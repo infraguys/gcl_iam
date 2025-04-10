@@ -344,6 +344,10 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
             organization_uuid=organization_uuid, name=name, **kwargs
         )
 
+    def get_project(self, uuid):
+        url = self._build_resource_uri(["iam/projects/", uuid])
+        return self.get(url=url).json()
+
     def create_organization_member(
         self, organization_uuid, user_uuid, role, **kwargs
     ):
