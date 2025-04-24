@@ -91,9 +91,11 @@ class PolicyBasedController(
         res = super(PolicyBasedControllerMixin, self).get(**kwargs)
         return res
 
-    def filter(self, filters):
+    def filter(self, filters, order_by=None):
         self._enforce_and_override_project_id_in_kwargs("read", filters)
-        return super(PolicyBasedController, self).filter(filters)
+        return super(PolicyBasedController, self).filter(
+            filters, order_by=order_by
+        )
 
     def delete(self, uuid):
         filters = {}
@@ -125,10 +127,10 @@ class NestedPolicyBasedController(
         self._enforce("read")
         return super(PolicyBasedControllerMixin, self).get(**kwargs)
 
-    def filter(self, parent_resource, filters):
+    def filter(self, parent_resource, filters, order_by=None):
         self._enforce("read")
         return super(NestedPolicyBasedController, self).filter(
-            parent_resource=parent_resource, filters=filters
+            parent_resource=parent_resource, filters=filters, order_by=order_by
         )
 
     def delete(self, parent_resource, uuid):
@@ -156,9 +158,9 @@ class PolicyBasedWithoutProjectController(
         self._enforce("read")
         return super().get(**kwargs)
 
-    def filter(self, filters):
+    def filter(self, filters, order_by=None):
         self._enforce("read")
-        return super().filter(filters=filters)
+        return super().filter(filters=filters, order_by=order_by)
 
     def delete(self, uuid):
         self._enforce("delete")
