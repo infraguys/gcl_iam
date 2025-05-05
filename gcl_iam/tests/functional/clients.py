@@ -158,6 +158,15 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
             json=body,
         ).json()
 
+    def confirm_email(self, user_uuid, code=None):
+        body = {"code": code}
+        return self.post(
+            self.build_resource_uri(
+                ["iam/users", user_uuid, "actions/confirm_email/invoke"]
+            ),
+            json=body,
+        ).json()
+
     def list_users(self, **kwargs):
         params = kwargs.copy()
         return self.get(
