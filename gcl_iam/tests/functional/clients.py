@@ -228,6 +228,10 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
             return role
         return self.create_role(name=name)
 
+    def list_roles(self):
+        url = self.build_collection_uri(["iam/roles/"])
+        return self.get(url).json()
+
     def create_permission(self, name):
         return self.post(
             f"{self._endpoint}iam/permissions/",
@@ -292,6 +296,10 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
             return bind
         return self.bind_role_to_user(role_uuid, user_uuid, project_id)
 
+    def list_role_bindings(self):
+        url = self.build_collection_uri(["iam/role_bindings/"])
+        return self.get(url=url).json()
+
     def get_role_bindings_by_project(self, role_uuid, project_id):
         url = self.build_collection_uri(["iam/role_bindings/"])
         params = {"role": role_uuid, "project": project_id}
@@ -344,6 +352,11 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
             json=body,
         ).json()
 
+    def list_projects(self):
+        url = self.build_collection_uri(["iam/projects/"])
+
+        return self.get(url=url).json()
+
     def create_or_get_project(self, organization_uuid, name, **kwargs):
         url = self.build_collection_uri(["iam/projects/"])
         params = {"organization": organization_uuid, "name": name}
@@ -356,6 +369,18 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
     def get_project(self, uuid):
         url = self._build_resource_uri(["iam/projects/", uuid])
         return self.get(url=url).json()
+
+    def update_project(self, uuid, **kwargs):
+        return self.put(
+            self.build_resource_uri(["iam/projects/", uuid]),
+            json=kwargs,
+        ).json()
+
+    def delete_project(self, uuid):
+        result = self.delete(
+            self.build_resource_uri(["iam/projects/", uuid]),
+        )
+        return None if result.status_code == 204 else result.json()
 
     def create_organization_member(
         self, organization_uuid, user_uuid, role, **kwargs
