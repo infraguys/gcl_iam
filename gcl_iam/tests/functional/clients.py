@@ -222,6 +222,10 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
             json=body,
         ).json()
 
+    def get_role(self, uuid):
+        url = self.build_resource_uri(["iam/roles/", uuid])
+        return self.get(url=url).json()
+
     def create_or_get_role(self, name):
         url = self.build_collection_uri(["iam/roles/"])
         for role in self.get(url=url, params={"name": name}).json():
@@ -232,11 +236,43 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
         url = self.build_collection_uri(["iam/roles/"])
         return self.get(url).json()
 
+    def update_role(self, uuid, **kwargs):
+        return self.put(
+            self.build_resource_uri(["iam/roles/", uuid]),
+            json=kwargs,
+        ).json()
+
+    def delete_role(self, uuid):
+        result = self.delete(
+            self.build_resource_uri(["iam/roles/", uuid]),
+        )
+        return None if result.status_code == 204 else result.json()
+
     def create_permission(self, name):
         return self.post(
             f"{self._endpoint}iam/permissions/",
             json={"name": name, "description": "Functional test permission"},
         ).json()
+
+    def get_permission(self, uuid):
+        url = self.build_resource_uri(["iam/permissions/", uuid])
+        return self.get(url=url).json()
+
+    def list_permissions(self):
+        url = self.build_collection_uri(["iam/permissions/"])
+        return self.get(url).json()
+
+    def update_permission(self, uuid, **kwargs):
+        return self.put(
+            self.build_resource_uri(["iam/permissions/", uuid]),
+            json=kwargs,
+        ).json()
+
+    def delete_permission(self, uuid):
+        result = self.delete(
+            self.build_resource_uri(["iam/permissions/", uuid]),
+        )
+        return None if result.status_code == 204 else result.json()
 
     def create_or_get_permission(self, name):
         url = self.build_collection_uri(["iam/permissions/"])
@@ -255,6 +291,35 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
             json=body,
         ).json()
 
+    create_permission_binding = bind_permission_to_role
+
+    def get_permission_binding(self, uuid):
+        url = self.build_resource_uri(["iam/permission_bindings/", uuid])
+        return self.get(url=url).json()
+
+    def list_permission_bindings(self):
+        url = self.build_collection_uri(["iam/permission_bindings/"])
+        return self.get(url).json()
+
+    def update_permission_binding(
+        self, uuid, role_uuid=None, permission_uuid=None, **kwargs
+    ):
+        body = kwargs.copy()
+        if permission_uuid:
+            body["permission"] = f"/v1/iam/permissions/{permission_uuid}"
+        if role_uuid:
+            body["role"] = f"/v1/iam/roles/{role_uuid}"
+        return self.put(
+            self.build_resource_uri(["iam/permission_bindings/", uuid]),
+            json=body,
+        ).json()
+
+    def delete_permission_binding(self, uuid):
+        result = self.delete(
+            self.build_resource_uri(["iam/permission_bindings/", uuid]),
+        )
+        return None if result.status_code == 204 else result.json()
+
     def create_or_get_permission_binding(
         self, permission_uuid, role_uuid, **kwargs
     ):
@@ -270,12 +335,16 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
     # TODO(efrolov): delete after refactoring dependencies
     create_or_get_binding = create_or_get_permission_binding
 
-    def bind_role_to_user(self, role_uuid, user_uuid, project_id=None):
-
-        body = {
-            "role": f"/v1/iam/roles/{role_uuid}",
-            "user": f"/v1/iam/users/{user_uuid}",
-        }
+    def bind_role_to_user(
+        self, role_uuid, user_uuid, project_id=None, **kwargs
+    ):
+        body = kwargs.copy()
+        body.update(
+            {
+                "role": f"/v1/iam/roles/{role_uuid}",
+                "user": f"/v1/iam/users/{user_uuid}",
+            }
+        )
 
         if project_id is not None:
             body["project"] = f"/v1/iam/projects/{project_id}"
@@ -285,20 +354,50 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
             json=body,
         ).json()
 
-    def create_or_get_role_binding(
-        self, role_uuid, user_uuid, project_id=None
-    ):
+    def create_or_get_role_binding(self, role_uuid, user_uuid, **kwargs):
         url = self.build_collection_uri(["iam/role_bindings/"])
-        params = {"role": role_uuid, "user": user_uuid}
-        if project_id is not None:
-            params["project"] = project_id
+        params = kwargs.copy()
+        params.update(
+            {
+                "role": role_uuid,
+                "user": user_uuid,
+            }
+        )
         for bind in self.get(url=url, params=params).json():
             return bind
-        return self.bind_role_to_user(role_uuid, user_uuid, project_id)
+        return self.bind_role_to_user(role_uuid, user_uuid, **kwargs)
+
+    create_role_binding = bind_role_to_user
 
     def list_role_bindings(self):
         url = self.build_collection_uri(["iam/role_bindings/"])
         return self.get(url=url).json()
+
+    def get_role_binding(self, uuid):
+        url = self.build_resource_uri(["iam/role_bindings/", uuid])
+        return self.get(url=url).json()
+
+    def update_role_binding(
+        self, uuid, role_uuid=None, user_uuid=None, project_id=None, **kwargs
+    ):
+        body = kwargs.copy()
+        if role_uuid is not None:
+            body["role"] = f"/v1/iam/roles/{role_uuid}"
+        if user_uuid is not None:
+            body["user"] = f"/v1/iam/users/{user_uuid}"
+        if project_id is not None:
+            body["project"] = f"/v1/iam/projects/{project_id}"
+
+        return self.put(
+            self.build_resource_uri(["iam/role_bindings/", uuid]),
+            json=body,
+        ).json()
+
+    def delete_role_binding(self, uuid):
+        result = self.delete(
+            self.build_resource_uri(["iam/role_bindings/", uuid]),
+        )
+        return None if result.status_code == 204 else result.json()
 
     def get_role_bindings_by_project(self, role_uuid, project_id):
         url = self.build_collection_uri(["iam/role_bindings/"])
@@ -428,6 +527,45 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
             user_uuid=user_uuid,
             project_id=project_id,
         )
+
+    def create_iam_client(
+        self, name, client_id, secret, redirect_url, **kwargs
+    ):
+        body = kwargs.copy()
+        body.update(
+            {
+                "name": name,
+                "client_id": client_id,
+                "secret": secret,
+                "redirect_url": redirect_url,
+            }
+        )
+        return self.post(
+            f"{self._endpoint}iam/clients/",
+            json=body,
+        ).json()
+
+    def list_iam_clients(self):
+        url = self.build_collection_uri(["iam/clients/"])
+
+        return self.get(url=url).json()
+
+    def get_iam_client(self, uuid):
+        url = self.build_resource_uri(["iam/clients/", uuid])
+
+        return self.get(url=url).json()
+
+    def update_iam_client(self, uuid, **kwargs):
+        return self.put(
+            self.build_resource_uri(["iam/clients/", uuid]),
+            json=kwargs,
+        ).json()
+
+    def delete_iam_client(self, uuid):
+        result = self.delete(
+            self.build_resource_uri(["iam/clients/", uuid]),
+        )
+        return None if result.status_code == 204 else result.json()
 
 
 class GenesisCoreTestRESTClient(GenesisCoreTestNoAuthRESTClient):
