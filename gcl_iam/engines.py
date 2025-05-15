@@ -14,9 +14,58 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import uuid as sys_uuid
+
 from gcl_iam import enforcers
 from gcl_iam import exceptions
 from gcl_iam import tokens
+
+
+class UserInfo:
+    def __init__(self, info):
+        self._info = info
+
+    @property
+    def uuid(self):
+        return self._info["uuid"]
+
+    @property
+    def name(self):
+        return self._info["name"]
+
+    @property
+    def first_name(self):
+        return self._info["first_name"]
+
+    @property
+    def last_name(self):
+        return self._info["last_name"]
+
+    @property
+    def email(self):
+        return self._info["email"]
+
+
+class IntrospectionInfo:
+    def __init__(self, info):
+        self._info = info
+
+    @property
+    def user_info(self):
+        return UserInfo(info=self._info["user_info"])
+
+    @property
+    def project_id(self):
+        value = self._info["project_id"]
+        return sys_uuid.UUID(value) if value else None
+
+    @property
+    def otp_verified(self):
+        return self._info["otp_verified"]
+
+    @property
+    def permissions(self):
+        return self._info["permissions"][:]
 
 
 class IamEngine:
@@ -52,6 +101,9 @@ class IamEngine:
 
     def introspection_info(self):
         return self._introspection_info
+
+    def get_introspection_info(self):
+        return IntrospectionInfo(info=self._introspection_info)
 
     @property
     def enforcer(self):
