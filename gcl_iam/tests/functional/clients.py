@@ -354,7 +354,9 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
             json=body,
         ).json()
 
-    def create_or_get_role_binding(self, role_uuid, user_uuid, **kwargs):
+    def create_or_get_role_binding(
+        self, role_uuid, user_uuid, project_id=None, **kwargs
+    ):
         url = self.build_collection_uri(["iam/role_bindings/"])
         params = kwargs.copy()
         params.update(
@@ -363,9 +365,15 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
                 "user": user_uuid,
             }
         )
+
+        if project_id is not None:
+            params["project"] = project_id
+
         for bind in self.get(url=url, params=params).json():
             return bind
-        return self.bind_role_to_user(role_uuid, user_uuid, **kwargs)
+        return self.bind_role_to_user(
+            role_uuid, user_uuid, project_id, **kwargs
+        )
 
     create_role_binding = bind_role_to_user
 
