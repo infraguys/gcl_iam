@@ -84,6 +84,37 @@ class BasicPermission(set):
         return Grant.DENY
 
 
+class ExtendedPermission:
+    def __init__(self):
+        self._stor = PermissionLevel(lambda: PermissionLevel(0))
+
+    """ "[regular|operator]full]:fieldname:method"
+     "full"
+       """
+
+    def add(self, perm):
+        res = perm.split(":", maxsplit=3)
+        try:
+            elev_level = Grant[res[0].upper()]
+        except KeyError:
+            LOG.warning(
+                "Grant %s from permission was not found, ignore!", elev_level
+            )
+            return
+
+        field = res[1] if len(res > 1) else "*"
+        method = res[2] if len(res > 2) else "*"
+
+        self._stor[field][method] = max(self._stor[field][method], elev_level)
+
+    def get_grant_level(self, *args):
+        elev_level, field, method = args
+        try:
+            return self._stor[field][method]
+        except KeyError:
+            return Grant.DENY
+
+
 class Enforcer(object):
     """
     A class to enforce permissions based on a list of predefined permissions.
