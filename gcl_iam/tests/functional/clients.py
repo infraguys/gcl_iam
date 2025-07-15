@@ -145,6 +145,17 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
     def delete(self, url, **kwargs):
         return self._client.delete(url, **kwargs)
 
+    def login(self, login, password):
+        """ Meant for testing non authenticated user login. """
+        auth = GenesisCoreAuth(
+            username=login,
+            password=password,
+        )
+        return self._client.post(
+            auth.get_token_url(self._endpoint),
+            json=auth.get_password_auth_params(),
+        ).json()
+
     def create_user(self, username, password, **kwargs):
         body = {
             "username": username,
