@@ -100,7 +100,8 @@ class GenesisCoreAuth:
             "grant_type": "password",
             "client_id": self._client_id,
             "client_secret": self._client_secret,
-            "username": self._username,
+            "username": self._username,  # left for backwards compatibility
+            "login": self._username,  # used in new tests
             "password": self._password,
             "scope": (
                 f"project:{self._project_id}" if self._project_id else ""
