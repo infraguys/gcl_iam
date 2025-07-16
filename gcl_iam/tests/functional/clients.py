@@ -146,7 +146,7 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
         return self._client.delete(url, **kwargs)
 
     def login(self, login, password):
-        """ Meant for testing non authenticated user login. """
+        """Meant for testing non authenticated user login."""
         auth = GenesisCoreAuth(
             username=login,
             password=password,
