@@ -95,6 +95,8 @@ class IamEngine:
             self._introspection_info["permissions"]
         )
 
+        self._introspection_info["otp_enabled"] = self._token_info.otp_enabled
+
     @property
     def token_info(self):
         return self._token_info

@@ -76,6 +76,10 @@ class PolicyBasedControllerMixin(object):
                 self._ctx_project_id
             )
 
+    def _check_otp(self):
+        if not self.request.headers.get("X-OTP") or not self._introspection.otp_verified:
+            raise exceptions.OTPInvalidCodeError()
+
 
 class PolicyBasedController(
     PolicyBasedControllerMixin, controllers.BaseResourceController
@@ -174,3 +178,10 @@ class PolicyBasedWithoutProjectController(
         dm.update_dm(values=kwargs)
         dm.update()
         return dm
+
+
+class PolicyBasedCheckOtpController(PolicyBasedController):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self._introspection.get("otp_enabled"):
+            self._check_otp()
