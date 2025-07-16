@@ -100,7 +100,8 @@ class GenesisCoreAuth:
             "grant_type": "password",
             "client_id": self._client_id,
             "client_secret": self._client_secret,
-            "username": self._username,
+            "username": self._username,  # left for backwards compatibility
+            "login": self._username,  # used in new tests
             "password": self._password,
             "scope": (
                 f"project:{self._project_id}" if self._project_id else ""
@@ -143,6 +144,17 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
 
     def delete(self, url, **kwargs):
         return self._client.delete(url, **kwargs)
+
+    def login(self, login, password):
+        """Meant for testing non authenticated user login."""
+        auth = GenesisCoreAuth(
+            username=login,
+            password=password,
+        )
+        return self._client.post(
+            auth.get_token_url(self._endpoint),
+            json=auth.get_password_auth_params(),
+        ).json()
 
     def create_user(self, username, password, **kwargs):
         body = {
