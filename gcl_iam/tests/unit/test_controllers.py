@@ -60,12 +60,15 @@ def ctx_storage_context(**kwargs):
 
 @pytest.fixture
 def unscoped_context():
-    yield ctx_storage_context(project_id=None, introspection_infopermissions=[
+    yield ctx_storage_context(
+        project_id=None,
+        introspection_infopermissions=[
             "service.resource.action",
             "genesis_core.vm.create",
             "genesis_core.vm.admin",
             "*.*.*",
-        ])
+        ],
+    )
     contexts.ContextWithStorage._clear_context()
 
 

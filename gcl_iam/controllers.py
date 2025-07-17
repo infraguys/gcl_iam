@@ -182,9 +182,7 @@ class PolicyBasedWithoutProjectController(
         return dm
 
 
-class PolicyBasedCheckOtpController(
-    PolicyBasedController
-):
+class PolicyBasedCheckOtpController(PolicyBasedController):
 
     def create(self, **kwargs):
         self._check_otp()
