@@ -29,6 +29,7 @@ class PolicyBasedControllerMixin(object):
 
     __policy_service_name__ = ""
     __policy_name__ = None
+    _otp_mandatory = False
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -77,8 +78,9 @@ class PolicyBasedControllerMixin(object):
             )
 
     def _check_otp(self):
-        if not self.request.headers.get("X-OTP") or not self._introspection.otp_verified:
-            raise exceptions.OTPInvalidCodeError()
+        if self._introspection.get("otp_enabled") or self._otp_mandatory:
+            if not self._introspection.get("otp_verified"):
+                raise exceptions.OTPInvalidCodeError()
 
 
 class PolicyBasedController(
@@ -180,8 +182,26 @@ class PolicyBasedWithoutProjectController(
         return dm
 
 
-class PolicyBasedCheckOtpController(PolicyBasedController):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if self._introspection.get("otp_enabled"):
-            self._check_otp()
+class PolicyBasedCheckOtpController(
+    PolicyBasedController
+):
+
+    def create(self, **kwargs):
+        self._check_otp()
+        return PolicyBasedController(self).create(**kwargs)
+
+    def get(self, **kwargs):
+        self._check_otp()
+        return PolicyBasedController(self).get(**kwargs)
+
+    def filter(self, filters, order_by=None):
+        self._check_otp()
+        return PolicyBasedController(self).filter(filters, order_by=order_by)
+
+    def delete(self, uuid):
+        self._check_otp()
+        PolicyBasedController(self).delete(uuid)
+
+    def update(self, uuid, **kwargs):
+        self._check_otp()
+        return PolicyBasedController(self).update(uuid, **kwargs)
