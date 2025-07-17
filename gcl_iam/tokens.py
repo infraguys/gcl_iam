@@ -102,6 +102,10 @@ class AuthToken(BaseToken):
     def token_type(self):
         return self._token_info["typ"]
 
+    @property
+    def otp_enabled(self):
+        return self._token_info.get("otp")
+
 
 class IdToken(BaseToken):
 
