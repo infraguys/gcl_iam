@@ -20,6 +20,7 @@ import uuid
 
 from unittest import mock
 
+from restalchemy.api import constants
 from restalchemy.common import contexts
 
 from gcl_iam import controllers
@@ -182,15 +183,18 @@ class TestPolicyBasedCheckOtpController:
 
     def test_check_otp_verified_true(self, otp_enabled_context):
         pc = controllers.PolicyBasedCheckOtpController(request=mock.Mock())
-        pc._check_otp()
+        pc._check_otp(constants.GET)
 
     def test_check_otp_verified_false(self, otp_not_verified_context):
         pc = controllers.PolicyBasedCheckOtpController(request=mock.Mock())
         with pytest.raises(exceptions.OTPInvalidCodeError):
-            pc._check_otp()
+            pc._check_otp(constants.GET)
 
-    def test_check_otp_mandatory(self, otp_not_enabled_context):
+    def test_check_otp_mandatory_on(self, otp_not_enabled_context):
         pc = controllers.PolicyBasedCheckOtpController(request=mock.Mock())
-        pc._otp_mandatory = True
         with pytest.raises(exceptions.OTPInvalidCodeError):
-            pc._check_otp()
+            pc._check_otp(constants.CREATE)
+
+    def test_check_otp_mandatory_off(self, otp_not_enabled_context):
+        pc = controllers.PolicyBasedCheckOtpController(request=mock.Mock())
+        pc._check_otp(constants.FILTER)
