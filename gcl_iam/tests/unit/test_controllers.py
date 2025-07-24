@@ -20,6 +20,7 @@ import uuid
 
 from unittest import mock
 
+from restalchemy.api import constants
 from restalchemy.common import contexts
 
 from gcl_iam import controllers
@@ -41,8 +42,7 @@ class FakeController(controllers.PolicyBasedControllerMixin):
         super().__init__(*args, **kwargs)
 
 
-@pytest.fixture
-def user_context():
+def ctx_storage_context(**kwargs):
     ctx_storage = mock.Mock()
     contexts.ContextWithStorage._store_context_session(ctx_storage)
     ctx_storage.iam_context.introspection_info.return_value = {
@@ -56,31 +56,45 @@ def user_context():
             "genesis_core.vm.admin",
         ],
     }
-
-    yield ctx_storage.iam_context.introspection_info
-
-    contexts.ContextWithStorage._clear_context()
+    ctx_storage.iam_context.introspection_info.return_value.update(kwargs)
+    return ctx_storage.iam_context.introspection_info
 
 
 @pytest.fixture
 def unscoped_context():
-    ctx_storage = mock.Mock()
-    contexts.ContextWithStorage._store_context_session(ctx_storage)
-    ctx_storage.iam_context.introspection_info.return_value = {
-        "user_info": {},
-        "project_id": None,
-        "otp_verified": True,
-        "permission_hash": "xxxx",
-        "permissions": [
+    yield ctx_storage_context(
+        project_id=None,
+        introspection_infopermissions=[
             "service.resource.action",
             "genesis_core.vm.create",
             "genesis_core.vm.admin",
             "*.*.*",
         ],
-    }
+    )
+    contexts.ContextWithStorage._clear_context()
 
-    yield ctx_storage.iam_context.introspection_info
 
+@pytest.fixture
+def user_context():
+    yield ctx_storage_context(project_id=FAKE_PROJECT_ID)
+    contexts.ContextWithStorage._clear_context()
+
+
+@pytest.fixture
+def otp_enabled_context():
+    yield ctx_storage_context(otp_enabled=True)
+    contexts.ContextWithStorage._clear_context()
+
+
+@pytest.fixture
+def otp_not_verified_context():
+    yield ctx_storage_context(otp_enabled=True, otp_verified=False)
+    contexts.ContextWithStorage._clear_context()
+
+
+@pytest.fixture
+def otp_not_enabled_context():
+    yield ctx_storage_context(otp_verified=False)
     contexts.ContextWithStorage._clear_context()
 
 
@@ -164,3 +178,24 @@ class TestPolicyBasedControllerMixin:
         pc._enforce_and_override_project_id_in_kwargs("create", kwargs)
 
         assert kwargs == {"project_id": FAKE_PROJECT_ID}
+
+
+class TestPolicyBasedCheckOtpController:
+
+    def test_check_otp_verified_true(self, otp_enabled_context):
+        pc = controllers.PolicyBasedCheckOtpController(request=mock.Mock())
+        pc._check_otp(constants.GET)
+
+    def test_check_otp_verified_false(self, otp_not_verified_context):
+        pc = controllers.PolicyBasedCheckOtpController(request=mock.Mock())
+        with pytest.raises(exceptions.OTPInvalidCodeError):
+            pc._check_otp(constants.GET)
+
+    def test_check_otp_mandatory_on(self, otp_not_enabled_context):
+        pc = controllers.PolicyBasedCheckOtpController(request=mock.Mock())
+        with pytest.raises(exceptions.OTPInvalidCodeError):
+            pc._check_otp(constants.CREATE)
+
+    def test_check_otp_mandatory_off(self, otp_not_enabled_context):
+        pc = controllers.PolicyBasedCheckOtpController(request=mock.Mock())
+        pc._check_otp(constants.FILTER)

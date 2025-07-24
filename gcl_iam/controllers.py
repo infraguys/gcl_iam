@@ -16,6 +16,7 @@
 
 import uuid
 
+from restalchemy.api import constants
 from restalchemy.api import controllers
 from restalchemy.common import contexts
 from restalchemy.dm import filters
@@ -29,6 +30,7 @@ class PolicyBasedControllerMixin(object):
 
     __policy_service_name__ = ""
     __policy_name__ = None
+    _otp_mandatory = set()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -75,6 +77,14 @@ class PolicyBasedControllerMixin(object):
             kwargs["project_id"] = types.UUID().from_simple_type(
                 self._ctx_project_id
             )
+
+    def _check_otp(self, method):
+        if (
+            self._introspection.get("otp_enabled")
+            or method in self._otp_mandatory
+        ):
+            if not self._introspection.get("otp_verified"):
+                raise exceptions.OTPInvalidCodeError()
 
 
 class PolicyBasedController(
@@ -174,3 +184,27 @@ class PolicyBasedWithoutProjectController(
         dm.update_dm(values=kwargs)
         dm.update()
         return dm
+
+
+class PolicyBasedCheckOtpController(PolicyBasedController):
+    _otp_mandatory = {constants.CREATE, constants.UPDATE, constants.DELETE}
+
+    def create(self, **kwargs):
+        self._check_otp(constants.CREATE)
+        return PolicyBasedController(self).create(**kwargs)
+
+    def get(self, **kwargs):
+        self._check_otp(constants.GET)
+        return PolicyBasedController(self).get(**kwargs)
+
+    def filter(self, filters, order_by=None):
+        self._check_otp(constants.FILTER)
+        return PolicyBasedController(self).filter(filters, order_by=order_by)
+
+    def delete(self, uuid):
+        self._check_otp(constants.DELETE)
+        PolicyBasedController(self).delete(uuid)
+
+    def update(self, uuid, **kwargs):
+        self._check_otp(constants.UPDATE)
+        return PolicyBasedController(self).update(uuid, **kwargs)
