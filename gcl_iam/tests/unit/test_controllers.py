@@ -55,7 +55,8 @@ def ctx_storage_context(**kwargs):
             "genesis_core.vm.create",
             "genesis_core.vm.admin",
         ],
-    } | kwargs
+    }
+    ctx_storage.iam_context.introspection_info.return_value.update(kwargs)
     return ctx_storage.iam_context.introspection_info
 
 
