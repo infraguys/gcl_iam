@@ -17,6 +17,7 @@
 import datetime
 import os
 import uuid as sys_uuid
+from random import randint
 
 import bazooka
 from bazooka import common
@@ -34,18 +35,53 @@ class GenesisCoreAuth:
         self,
         username: str,
         password: str,
+        grant_type: str = "password",
         client_uuid: str = "00000000-0000-0000-0000-000000000000",
         client_id: str = "GenesisCoreClientId",
         client_secret: str = "GenesisCoreClientSecret",
         uuid: str = "00000000-0000-0000-0000-000000000000",
-        email: str = "admin@genesis.com",
+        email: str = None,
+        phone: str = None,
+        login: str = None,
         project_id: str = None,
     ):
+        """
+        Handles authentication for the Genesis Core API.
+
+        :param username: The username for authentication.
+        :param password: The password for authentication.
+        :param grant_type: grant type, can be one of:
+            - "password": default type, auth by username + password
+            - "username+password": same as "password"
+            - "email+password": auth by email + password
+            - "phone+password": auth by phone + password
+            - "login+password": "smart" dynamic auth by username/email/phone + password,
+                depending on what's in the `self.login` string
+        :param client_uuid: Unique identifier for the client - UUID.
+        :param client_id: Client ID.
+        :param client_secret: Client secret.
+        :param uuid: Unique user identifier - UUID.
+        :param email: User email address. Can be used for auth with `grant_type="email+password"`.
+        :param phone: User phone number. Can be used for auth with `grant_type="phone+password"`.
+        :param login: Generic login identifier, can be username/email/phone. Can be used for auth with `grant_type="login+password"`.
+        :param project_id (str, optional): Project identifier for scoped authentication.
+
+        Example:
+            >>> auth = GenesisCoreAuth(
+            ...     username="user123",
+            ...     password="securepassword",
+            ... )
+            >>> auth.client_id
+            'GenesisCoreClientId'
+        """
         super().__init__()
         self._uuid = uuid
-        self._email = email
         self._username = username
         self._password = password
+        self._email = email or f"{username}@mail.com"
+        self._phone = phone or "+1" + str(randint(1000000000, 9999999999))
+        self._login = login or username
+        self._grant_type = grant_type
         self._client_uuid = client_uuid
         self._client_id = client_id
         self._client_secret = client_secret
@@ -76,8 +112,20 @@ class GenesisCoreAuth:
         return self._username
 
     @property
+    def phone(self):
+        return self._phone
+
+    @property
+    def login(self):
+        return self._login
+
+    @property
     def password(self):
         return self._password
+
+    @property
+    def grant_type(self):
+        return self._grant_type
 
     @property
     def client_uuid(self):
@@ -96,17 +144,26 @@ class GenesisCoreAuth:
         return self._project_id
 
     def get_password_auth_params(self):
-        return {
-            "grant_type": "password",
+        params = {
+            "grant_type": self._grant_type,
             "client_id": self._client_id,
             "client_secret": self._client_secret,
-            "username": self._username,  # left for backwards compatibility
-            "login": self._username,  # used in new tests
             "password": self._password,
             "scope": (
                 f"project:{self._project_id}" if self._project_id else ""
             ),
         }
+        if self.grant_type in ("password", "username+password"):
+            params["username"] = self._username
+        elif self.grant_type == "email+password":
+            params["email"] = self._email
+        elif self.grant_type == "phone+password":
+            params["phone"] = self._phone
+        elif self.grant_type == "login+password":
+            params["login"] = self._login
+        else:
+            raise ValueError(f"Unexpected grant_type: {self.grant_type}")
+        return params
 
     def get_refresh_token_auth_params(self, refresh_token):
         return {
@@ -145,16 +202,6 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
     def delete(self, url, **kwargs):
         return self._client.delete(url, **kwargs)
 
-    def login(self, login, password):
-        """Meant for testing non authenticated user login."""
-        auth = GenesisCoreAuth(
-            username=login,
-            password=password,
-        )
-        return self._client.post(
-            auth.get_token_url(self._endpoint),
-            json=auth.get_password_auth_params(),
-        ).json()
 
     def create_user(self, username, password, **kwargs):
         body = {
