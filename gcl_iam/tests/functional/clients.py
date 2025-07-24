@@ -202,7 +202,6 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
     def delete(self, url, **kwargs):
         return self._client.delete(url, **kwargs)
 
-
     def create_user(self, username, password, **kwargs):
         body = {
             "username": username,
