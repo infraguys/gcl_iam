@@ -16,7 +16,7 @@
 
 import abc
 
-import bazooka
+import bazooka.exceptions
 
 from gcl_iam import exceptions
 
@@ -76,5 +76,5 @@ class HttpDriver(AbstractAuthDriver):
                 introspection_url,
                 headers=headers,
             ).json()
-        except bazooka.exceptions.RequestError:
+        except bazooka.exceptions.BadRequestError:
             raise exceptions.InvalidAuthTokenError()
