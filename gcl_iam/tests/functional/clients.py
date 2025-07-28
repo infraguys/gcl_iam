@@ -78,9 +78,9 @@ class GenesisCoreAuth:
         self._uuid = uuid
         self._username = username
         self._password = password
-        self._email = email or f"{username}@mail.com"
-        self._phone = phone or "+1" + str(randint(1000000000, 9999999999))
-        self._login = login or username
+        self._email = email
+        self._phone = phone
+        self._login = login
         self._grant_type = grant_type
         self._client_uuid = client_uuid
         self._client_id = client_id
