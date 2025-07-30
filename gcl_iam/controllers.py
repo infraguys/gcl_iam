@@ -191,20 +191,20 @@ class PolicyBasedCheckOtpController(PolicyBasedController):
 
     def create(self, **kwargs):
         self._check_otp(constants.CREATE)
-        return PolicyBasedController(self).create(**kwargs)
+        return super().create(**kwargs)
 
     def get(self, **kwargs):
         self._check_otp(constants.GET)
-        return PolicyBasedController(self).get(**kwargs)
+        return super().get(**kwargs)
 
     def filter(self, filters, order_by=None):
         self._check_otp(constants.FILTER)
-        return PolicyBasedController(self).filter(filters, order_by=order_by)
+        return super().filter(filters, order_by=order_by)
 
     def delete(self, uuid):
         self._check_otp(constants.DELETE)
-        PolicyBasedController(self).delete(uuid)
+        super().delete(uuid)
 
     def update(self, uuid, **kwargs):
         self._check_otp(constants.UPDATE)
-        return PolicyBasedController(self).update(uuid, **kwargs)
+        return super().update(uuid, **kwargs)
