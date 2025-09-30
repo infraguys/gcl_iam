@@ -128,9 +128,12 @@ class NestedPolicyBasedController(
     PolicyBasedControllerMixin, controllers.BaseNestedResourceController
 ):
 
-    # Nested resources don't have projects, so it will be checked via parent
+    # Nested resources may not have projects, so it will be checked via parent
     def create(self, **kwargs):
-        self._enforce("create")
+        if "project_id" in self.model.properties:
+            self._enforce_and_override_project_id_in_kwargs("create", kwargs)
+        else:
+            self._enforce("create")
         return super(PolicyBasedControllerMixin, self).create(**kwargs)
 
     def get(self, **kwargs):
