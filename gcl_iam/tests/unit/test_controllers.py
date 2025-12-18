@@ -15,7 +15,6 @@
 #    under the License.
 
 import pytest
-import threading
 import uuid
 
 from unittest import mock
@@ -24,7 +23,6 @@ from restalchemy.api import constants
 from restalchemy.common import contexts
 
 from gcl_iam import controllers
-from gcl_iam import engines
 from gcl_iam import exceptions
 
 

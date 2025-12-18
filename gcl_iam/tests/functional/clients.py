@@ -16,8 +16,8 @@
 
 import datetime
 import os
+import typing as tp
 import uuid as sys_uuid
-from random import randint
 
 import bazooka
 from bazooka import common
@@ -38,7 +38,7 @@ class GenesisCoreAuth:
         grant_type: str = "password",
         client_uuid: str = "00000000-0000-0000-0000-000000000000",
         client_id: str = "GenesisCoreClientId",
-        client_secret: str = "GenesisCoreClientSecret",
+        client_secret: str = "GenesisCoreSecret",
         uuid: str = "00000000-0000-0000-0000-000000000000",
         email: str = None,
         phone: str = None,
@@ -572,7 +572,7 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
     def set_permissions_to_user(
         self,
         user_uuid: str,
-        permissions: list[str] = None,
+        permissions: tp.Optional[tp.List[str]] = None,
         project_id: str = None,
     ):
         permissions = permissions or []
@@ -595,15 +595,16 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
         )
 
     def create_iam_client(
-        self, name, client_id, secret, redirect_url, **kwargs
+        self, name, client_id, secret, signature_algorithm, **kwargs
     ):
         body = kwargs.copy()
+
         body.update(
             {
                 "name": name,
                 "client_id": client_id,
                 "secret": secret,
-                "redirect_url": redirect_url,
+                "signature_algorithm": signature_algorithm,
             }
         )
         return self.post(

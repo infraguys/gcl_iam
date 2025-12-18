@@ -17,15 +17,11 @@
 
 from oslo_config import cfg
 
-from gcl_iam import algorithms
-from gcl_iam import constants as glc_iam_c
-
 
 CONF = cfg.CONF
 
 
 DOMAIN_IAM = "iam"
-DOMAIN_HS256 = "token_hs256"
 
 
 def register_iam_cli_opts(conf):
@@ -34,30 +30,16 @@ def register_iam_cli_opts(conf):
 
     iam_cli_opts = [
         cfg.StrOpt(
-            "token_encryption_algorithm",
-            default="HS256",
-            choices=("HS256",),
-            help="Token encryption algorithm",
+            "iam_endpoint",
+            default="http://core.local.genesis-core.tech:11010/",
+            help="IAM endpoint used by services",
         ),
-    ]
-
-    iam_cli_token_encryption_algorithms = [
         cfg.StrOpt(
-            "encryption_key",
-            default="secret",
-            help="Token encryption key",
+            "hs256_jwks_decryption_key",
+            default="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            secret=True,
+            help="HS256 JWKS decryption key (A256GCM key, base64 or utf-8)",
         ),
     ]
 
     conf.register_cli_opts(iam_cli_opts, DOMAIN_IAM)
-    conf.register_cli_opts(iam_cli_token_encryption_algorithms, DOMAIN_HS256)
-
-
-def get_token_encryption_algorithm(conf=CONF):
-    tea_name = conf[DOMAIN_IAM].token_encryption_algorithm
-    if tea_name == glc_iam_c.ALGORITHM_HS256:
-        return algorithms.HS256(
-            key=conf[DOMAIN_HS256].encryption_key,
-        )
-    else:
-        raise ValueError("Unknown token encryption algorithm: {tea_name}")

@@ -15,28 +15,84 @@
 #    under the License.
 
 import datetime
+import typing as tp
 import uuid
+
+import jwt
 
 
 class BaseToken:
 
     def __init__(
         self,
+        token: tp.Optional[str],
+        token_info: tp.Optional[dict],
+        audience: str,
+    ):
+        super().__init__()
+        self._token = token
+        self._token_info = token_info
+        self._audience = audience
+
+    @property
+    def token(self) -> tp.Optional[str]:
+        return self._token
+
+    @property
+    def token_info(self) -> tp.Optional[dict]:
+        return self._token_info
+
+    @property
+    def audience_name(self) -> str:
+        return self._audience
+
+    @property
+    def uuid(self):
+        return uuid.UUID(self._token_info["jti"])
+
+
+class UnverifiedToken(BaseToken):
+
+    def __init__(self, token: str):
+        token_info = jwt.decode(
+            token,
+            options={
+                "verify_signature": False,
+                "verify_exp": False,
+                "verify_aud": False,
+            },
+        )
+
+        super().__init__(
+            token=token,
+            token_info=token_info,
+            audience=token_info["aud"],
+        )
+
+
+class VerifiedToken(BaseToken):
+
+    def __init__(
+        self,
         token,
         algorithm,
-        audience=None,
         ignore_audience=False,
         ignore_expiration=False,
         verify=True,
     ):
-        super().__init__()
-        self._token = token
-        self._token_info = algorithm.decode(
+        token_info = algorithm.decode(
             token,
-            audience=audience,
+            audience=None,
             ignore_audience=ignore_audience,
             ignore_expiration=ignore_expiration,
             verify=verify,
+        )
+        audience_name = token_info["aud"]
+
+        super().__init__(
+            token=token,
+            token_info=token_info,
+            audience=audience_name,
         )
         self._algorithm = algorithm
 
@@ -51,45 +107,15 @@ class BaseToken:
         return datetime.datetime.fromtimestamp(iat, tz=datetime.timezone.utc)
 
     @property
-    def uuid(self):
-        return uuid.UUID(self._token_info["jti"])
-
-    @property
     def issuer_url(self):
         return self._token_info["iss"]
-
-    @property
-    def audience_name(self):
-        return self._token_info["aud"]
 
     @property
     def user_uuid(self):
         return uuid.UUID(self._token_info["sub"])
 
-    @property
-    def token(self):
-        return self._token
 
-
-class AuthToken(BaseToken):
-
-    def __init__(
-        self,
-        token,
-        algorithm,
-        audience=None,
-        ignore_audience=False,
-        ignore_expiration=False,
-        verify=True,
-    ):
-        super().__init__(
-            token=token,
-            algorithm=algorithm,
-            audience=audience,
-            ignore_audience=ignore_audience,
-            ignore_expiration=ignore_expiration,
-            verify=verify,
-        )
+class AuthToken(VerifiedToken):
 
     @property
     def autenticated_at(self):
@@ -107,13 +133,12 @@ class AuthToken(BaseToken):
         return self._token_info.get("otp")
 
 
-class IdToken(BaseToken):
+class IdToken(VerifiedToken):
 
     def __init__(
         self,
         token,
         algorithm,
-        audience=None,
         ignore_audience=False,
         ignore_expiration=False,
         verify=True,
@@ -121,7 +146,6 @@ class IdToken(BaseToken):
         super().__init__(
             token=token,
             algorithm=algorithm,
-            audience=audience,
             ignore_audience=ignore_audience,
             ignore_expiration=ignore_expiration,
             verify=verify,
@@ -143,13 +167,12 @@ class IdToken(BaseToken):
         return self._token_info["email"]
 
 
-class RefreshToken(BaseToken):
+class RefreshToken(VerifiedToken):
 
     def __init__(
         self,
         token,
         algorithm,
-        audience=None,
         ignore_audience=False,
         ignore_expiration=False,
         verify=True,
@@ -157,7 +180,6 @@ class RefreshToken(BaseToken):
         super().__init__(
             token=token,
             algorithm=algorithm,
-            audience=audience,
             ignore_audience=ignore_audience,
             ignore_expiration=ignore_expiration,
             verify=verify,
