@@ -16,6 +16,7 @@
 
 # Algorithms
 ALGORITHM_HS256 = "HS256"
+ALGORITHM_RS256 = "RS256"
 
 
 # Context storage key name

@@ -17,18 +17,17 @@
 #    under the License.
 
 import abc
-from http import client as http_client
 import logging
 import re
+from http import client as http_client
 
 from restalchemy.api.middlewares import contexts as contexts_mw
 from restalchemy.api.middlewares import errors as errors_mw
 
 from gcl_iam import contexts
-from gcl_iam import drivers
 from gcl_iam import engines
 from gcl_iam import exceptions as exc
-
+from gcl_iam import tokens
 
 LOG = logging.getLogger(__name__)
 
@@ -58,10 +57,9 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
     def __init__(
         self,
         application,
-        token_algorithm,
+        iam_engine_driver,
         context_class=contexts.GenesisCoreAuthContext,
         context_kwargs=None,
-        iam_engine_driver=None,
         skip_auth_endpoints: list = None,
     ):
         super().__init__(
@@ -69,9 +67,11 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
             context_class=context_class,
             context_kwargs=context_kwargs,
         )
-        self._token_algorithm = token_algorithm
-        self._iam_engine_driver = iam_engine_driver or drivers.HttpDriver()
+        self._iam_engine_driver = iam_engine_driver
         self._skip_auth_endpoints = skip_auth_endpoints or []
+
+    def _construct_context(self, req):
+        return self._context_class(req=req, **self._context_kwargs)
 
     def _should_skip_auth(self, req):
         for endpoint in self._skip_auth_endpoints:
@@ -90,6 +90,11 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
             return None
         return int(req.headers["X-OTP"])
 
+    def _get_unverified_token_info(
+        self, auth_token: str
+    ) -> tokens.UnverifiedToken:
+        return tokens.UnverifiedToken(auth_token)
+
     def _get_response(self, ctx, req):
         with ctx.context_manager():
             if self._should_skip_auth(req):
@@ -97,9 +102,15 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
                 return super()._get_response(ctx, req)
             else:
                 try:
+                    auth_token = self._get_auth_token(req)
+                    token_info = self._get_unverified_token_info(auth_token)
+
+                    algorithm = self._iam_engine_driver.get_algorithm(
+                        token_info
+                    )
                     iam_context = engines.IamEngine(
-                        auth_token=self._get_auth_token(req),
-                        algorithm=self._token_algorithm,
+                        auth_token=auth_token,
+                        algorithm=algorithm,
                         driver=self._iam_engine_driver,
                         otp_code=self._get_otp_code(req),
                     )
