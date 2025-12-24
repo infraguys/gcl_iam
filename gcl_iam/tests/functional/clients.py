@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import annotations
+
 import datetime
 import os
 import typing as tp
@@ -40,10 +42,10 @@ class GenesisCoreAuth:
         client_id: str = "GenesisCoreClientId",
         client_secret: str = "GenesisCoreSecret",
         uuid: str = "00000000-0000-0000-0000-000000000000",
-        email: str = None,
-        phone: str = None,
-        login: str = None,
-        project_id: str = None,
+        email: tp.Optional[str] = None,
+        phone: tp.Optional[str] = None,
+        login: tp.Optional[str] = None,
+        project_id: tp.Optional[str] = None,
     ):
         """
         Handles authentication for the Genesis Core API.
@@ -573,7 +575,7 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
         self,
         user_uuid: str,
         permissions: tp.Optional[tp.List[str]] = None,
-        project_id: str = None,
+        project_id: tp.Optional[str] = None,
     ):
         permissions = permissions or []
 
