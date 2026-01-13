@@ -1,4 +1,4 @@
-#    Copyright 2025 Genesis Corporation.
+#    Copyright 2025-2026 Genesis Corporation.
 #
 #    All Rights Reserved.
 #
@@ -14,11 +14,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import abc
+import logging
 import uuid as sys_uuid
 
 from gcl_iam import enforcers
 from gcl_iam import exceptions
 from gcl_iam import tokens
+
+
+LOG = logging.getLogger(__name__)
 
 
 class UserInfo:
@@ -51,6 +56,10 @@ class IntrospectionInfo:
         self._info = info
 
     @property
+    def info(self):
+        return self._info.copy()
+
+    @property
     def user_info(self):
         return UserInfo(info=self._info["user_info"])
 
@@ -68,13 +77,56 @@ class IntrospectionInfo:
         return self._info["permissions"][:]
 
 
-class IamEngine:
+class AbstractIamEngine(metaclass=abc.ABCMeta):
+
+    def __init__(self, token_info, introspection_info, enforcer=None):
+        super().__init__()
+        self._token_info = token_info
+        self._introspection_info = introspection_info
+        self._enforcer = enforcer or enforcers.Enforcer(
+            self._introspection_info.permissions
+        )
+
+    @property
+    def raw_token_info(self):
+        return self._token_info.token_info.copy()
+
+    @property
+    def raw_introspection_info(self):
+        return self._introspection_info.info
+
+    def get_token_info(self):
+        return self._token_info
+
+    def get_introspection_info(self):
+        return self._introspection_info
+
+    @property
+    def enforcer(self):
+        return self._enforcer
+
+    # TODO(efrolov): remove below properties and methods in the future
+    @property
+    def token_info(self):
+        LOG.warning(
+            "token_info property is deprecated, use get_token_info() instead"
+        )
+        return self._token_info
+
+    def introspection_info(self):
+        LOG.warning(
+            "introspection_info method is deprecated, use"
+            " raw_introspection_info instead"
+        )
+        return self._introspection_info.info
+
+
+class IamEngine(AbstractIamEngine):
 
     def __init__(
         self, auth_token, algorithm, driver, enforcer=None, otp_code=None
     ):
-        super().__init__()
-        self._token_info = tokens.AuthToken(
+        token_info = tokens.AuthToken(
             auth_token,
             algorithm,
             ignore_audience=True,
@@ -82,31 +134,21 @@ class IamEngine:
             verify=True,
         )
         self._driver = driver
-        self._introspection_info = self._driver.get_introspection_info(
-            token_info=self._token_info,
+
+        raw_introspection_info = self._driver.get_introspection_info(
+            token_info=token_info,
             otp_code=otp_code,
         )
+        raw_introspection_info["otp_enabled"] = token_info.otp_enabled
 
         # Forbid requests without auth or without project scope
-        if not self._introspection_info:
+        if not raw_introspection_info:
             raise exceptions.Unauthorized()
 
-        self._enforcer = enforcer or enforcers.Enforcer(
-            self._introspection_info["permissions"]
+        introspection_info = IntrospectionInfo(info=raw_introspection_info)
+
+        super().__init__(
+            token_info=token_info,
+            introspection_info=introspection_info,
+            enforcer=enforcer,
         )
-
-        self._introspection_info["otp_enabled"] = self._token_info.otp_enabled
-
-    @property
-    def token_info(self):
-        return self._token_info
-
-    def introspection_info(self):
-        return self._introspection_info
-
-    def get_introspection_info(self):
-        return IntrospectionInfo(info=self._introspection_info)
-
-    @property
-    def enforcer(self):
-        return self._enforcer

@@ -1,6 +1,6 @@
 #    Copyright 2011 OpenStack Foundation.
 #    Copyright 2020 Eugene Frolov
-#    Copyright 2025 Genesis Corporation.
+#    Copyright 2025-2026 Genesis Corporation.
 #
 #    All Rights Reserved.
 #
@@ -52,7 +52,10 @@ class EndpointComparator(AbstactEndpointComparator):
         return full_path.fullmatch(req.path) and req.method in self._methods
 
 
-class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
+class AbstractGenesisCoreAuthMiddleware(
+    contexts_mw.ContextMiddleware,
+    metaclass=abc.ABCMeta,
+):
 
     def __init__(
         self,
@@ -60,7 +63,6 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
         iam_engine_driver,
         context_class=contexts.GenesisCoreAuthContext,
         context_kwargs=None,
-        skip_auth_endpoints: list = None,
     ):
         super().__init__(
             application=application,
@@ -68,16 +70,9 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
             context_kwargs=context_kwargs,
         )
         self._iam_engine_driver = iam_engine_driver
-        self._skip_auth_endpoints = skip_auth_endpoints or []
 
     def _construct_context(self, req):
         return self._context_class(req=req, **self._context_kwargs)
-
-    def _should_skip_auth(self, req):
-        for endpoint in self._skip_auth_endpoints:
-            if endpoint.compare(req):
-                return True
-        return False
 
     def _get_auth_token(self, req):
         header_value = req.headers.get("Authorization", "")
@@ -95,34 +90,67 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
     ) -> tokens.UnverifiedToken:
         return tokens.UnverifiedToken(auth_token)
 
+    @abc.abstractmethod
+    def _get_iam_context(self, req):
+        raise NotImplementedError("Not implemented")
+
     def _get_response(self, ctx, req):
         with ctx.context_manager():
-            if self._should_skip_auth(req):
+            iam_context = self._get_iam_context(req)
+            if iam_context is None:
                 LOG.info("Skip auth for %s", req.path)
                 return super()._get_response(ctx, req)
-            else:
-                try:
-                    auth_token = self._get_auth_token(req)
-                    token_info = self._get_unverified_token_info(auth_token)
 
-                    algorithm = self._iam_engine_driver.get_algorithm(
-                        token_info
-                    )
-                    iam_context = engines.IamEngine(
-                        auth_token=auth_token,
-                        algorithm=algorithm,
-                        driver=self._iam_engine_driver,
-                        otp_code=self._get_otp_code(req),
-                    )
-                except exc.OTPInvalidCodeError:
-                    raise
-                except Exception:
-                    LOG.exception("Invalid auth token by reason:")
-                    raise exc.InvalidAuthTokenError()
+            with ctx.iam_session(iam_context):
+                req.iam_engine = iam_context
+                return super()._get_response(ctx, req)
 
-                with ctx.iam_session(iam_context):
-                    req.iam_engine = iam_context
-                    return super()._get_response(ctx, req)
+
+class GenesisCoreAuthMiddleware(AbstractGenesisCoreAuthMiddleware):
+
+    def __init__(
+        self,
+        application,
+        iam_engine_driver,
+        context_class=contexts.GenesisCoreAuthContext,
+        context_kwargs=None,
+        skip_auth_endpoints: list = None,
+    ):
+        super().__init__(
+            application=application,
+            iam_engine_driver=iam_engine_driver,
+            context_class=context_class,
+            context_kwargs=context_kwargs,
+        )
+        self._skip_auth_endpoints = skip_auth_endpoints or []
+
+    def _should_skip_auth(self, req):
+        for endpoint in self._skip_auth_endpoints:
+            if endpoint.compare(req):
+                return True
+        return False
+
+    def _get_iam_context(self, req):
+        if self._should_skip_auth(req):
+            return None
+
+        try:
+            auth_token = self._get_auth_token(req)
+            token_info = self._get_unverified_token_info(auth_token)
+
+            algorithm = self._iam_engine_driver.get_algorithm(token_info)
+            iam_context = engines.IamEngine(
+                auth_token=auth_token,
+                algorithm=algorithm,
+                driver=self._iam_engine_driver,
+                otp_code=self._get_otp_code(req),
+            )
+            return iam_context
+        except exc.OTPInvalidCodeError:
+            raise
+        except Exception:
+            LOG.exception("Invalid auth token by reason:")
+            raise exc.InvalidAuthTokenError()
 
 
 class ErrorsHandlerMiddleware(errors_mw.ErrorsHandlerMiddleware):

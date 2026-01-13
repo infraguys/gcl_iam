@@ -1,4 +1,4 @@
-#    Copyright 2025 Genesis Corporation.
+#    Copyright 2025-2026 Genesis Corporation.
 #
 #    All Rights Reserved.
 #
@@ -35,7 +35,7 @@ class PolicyBasedControllerMixin(object):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._introspection = (
-            contexts.get_context().iam_context.introspection_info()
+            contexts.get_context().iam_context.raw_introspection_info
         )
 
         self._ctx_project_id = self._introspection.get("project_id", None)
