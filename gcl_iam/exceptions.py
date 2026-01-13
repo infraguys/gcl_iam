@@ -1,4 +1,5 @@
 #    Copyright 2025 Genesis Corporation.
+#    Copyright 2026 Genesis Corporation.
 #
 #    All Rights Reserved.
 #
@@ -85,3 +86,10 @@ class Unauthorized(ClientAuthenticationError):
 
 class Forbidden(CommonForbiddenError):
     __template__ = "The request you have made is forbidden."
+
+
+class TokenAudienceMismatchError(ClientAuthenticationError):
+    __template__ = (
+        "Token audience {token_audience!r} does not match service"
+        " audience {service_audience!r}."
+    )
