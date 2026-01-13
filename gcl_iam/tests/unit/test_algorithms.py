@@ -208,6 +208,7 @@ def test_http_driver_get_algorithm_keys_hs256_jwks_payload_ok() -> None:
 
     driver = drivers.HttpDriver(
         "http://iam.example/",
+        audience="client-1",
         hs256_jwks_decryption_key=aes_key_b64,
     )
     driver._client = mock.Mock()
@@ -245,6 +246,7 @@ def test_http_driver_get_algorithm_rs256_verify_only_jwks_payload_ok() -> None:
 
     driver = drivers.HttpDriver(
         "http://iam.example/",
+        audience="client-1",
         hs256_jwks_decryption_key=aes_key_b64,
     )
     driver._client = mock.Mock()
@@ -262,3 +264,44 @@ def test_http_driver_get_algorithm_rs256_verify_only_jwks_payload_ok() -> None:
     token = jwt.encode({"sub": "user"}, key=private_key_pem, algorithm="RS256")
     decoded = algo.decode(token)
     assert decoded["sub"] == "user"
+
+
+def test_http_driver_get_algorithm_audience_mismatch_raises() -> None:
+    aes_key = os.urandom(32)
+    aes_key_b64 = base64.urlsafe_b64encode(aes_key).decode("utf-8").rstrip("=")
+
+    driver = drivers.HttpDriver(
+        "http://iam.example/",
+        audience="client-1",
+        hs256_jwks_decryption_key=aes_key_b64,
+    )
+    driver._client = mock.Mock()
+
+    token_info = mock.Mock(spec=tokens.UnverifiedToken)
+    token_info.audience_name = "client-2"
+
+    with pytest.raises(exceptions.TokenAudienceMismatchError):
+        driver.get_algorithm(token_info)
+
+    assert not driver._client.get.called
+
+
+def test_http_driver_get_introspection_info_audience_mismatch_raises() -> None:
+    aes_key = os.urandom(32)
+    aes_key_b64 = base64.urlsafe_b64encode(aes_key).decode("utf-8").rstrip("=")
+
+    driver = drivers.HttpDriver(
+        "http://iam.example/",
+        audience="client-1",
+        hs256_jwks_decryption_key=aes_key_b64,
+    )
+    driver._client = mock.Mock()
+
+    token_info = mock.Mock(spec=tokens.UnverifiedToken)
+    token_info.audience_name = "client-2"
+    token_info.token = "dummy"
+
+    with pytest.raises(exceptions.TokenAudienceMismatchError):
+        driver.get_introspection_info(token_info)
+
+    assert not driver._client.get.called
