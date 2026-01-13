@@ -1,4 +1,5 @@
 #    Copyright 2025 Genesis Corporation.
+#    Copyright 2026 Genesis Corporation.
 #
 #    All Rights Reserved.
 #
@@ -146,6 +147,7 @@ class HttpDriver(AbstractAuthDriver):
     def __init__(
         self,
         iam_endpoint: str,
+        audience: str,
         hs256_jwks_decryption_key: str,
         default_timeout=5,
         cache_maxsize: int = 100,
@@ -153,6 +155,7 @@ class HttpDriver(AbstractAuthDriver):
     ):
         super().__init__()
         self._iam_endpoint = utils.lastslash(iam_endpoint)
+        self._audience = audience
         self._client = bazooka.Client(default_timeout=default_timeout)
         self._cache_ttl_seconds = cache_ttl_seconds
         self._hs256_jwks_decryption_key = hs256_jwks_decryption_key
@@ -165,9 +168,12 @@ class HttpDriver(AbstractAuthDriver):
 
     def get_introspection_info(self, token_info, otp_code=None):
         audience = token_info.audience_name
-        introspection_url = (
-            f"{self._iam_endpoint}v1/iam/clients/{audience}/actions/introspect"
-        )
+        if audience != self._audience:
+            raise exceptions.TokenAudienceMismatchError(
+                token_audience=audience,
+                service_audience=self._audience,
+            )
+        introspection_url = f"{self._iam_endpoint}actions/introspect"
         headers = {"Authorization": f"Bearer {token_info.token}"}
         if otp_code is not None:
             headers["X-OTP"] = otp_code
@@ -184,17 +190,19 @@ class HttpDriver(AbstractAuthDriver):
         token_info: tokens.UnverifiedToken,
     ) -> algorithms.AbstractAlgorithm:
         audience = token_info.audience_name
+        if audience != self._audience:
+            raise exceptions.TokenAudienceMismatchError(
+                token_audience=audience,
+                service_audience=self._audience,
+            )
         time_bucket = int(time.time() // self._cache_ttl_seconds)
-        return self._get_algorithm_cached(audience, time_bucket)
+        return self._get_algorithm_cached(time_bucket)
 
     def _get_algorithm_uncached(
         self,
-        audience: str,
         time_bucket: int,
     ) -> algorithms.AbstractAlgorithm:
-        jwks_url = (
-            f"{self._iam_endpoint}v1/iam/clients/{audience}/actions/jwks"
-        )
+        jwks_url = f"{self._iam_endpoint}actions/jwks"
 
         payload = self._client.get(
             jwks_url,

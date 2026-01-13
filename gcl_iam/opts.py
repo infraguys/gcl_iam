@@ -1,4 +1,5 @@
 #    Copyright 2025 Genesis Corporation.
+#    Copyright 2026 Genesis Corporation.
 #
 #    All Rights Reserved.
 #
@@ -31,8 +32,16 @@ def register_iam_cli_opts(conf):
     iam_cli_opts = [
         cfg.StrOpt(
             "iam_endpoint",
-            default="http://core.local.genesis-core.tech:11010/",
+            default=(
+                "http://core.local.genesis-core.tech:11010/v1/iam/clients/"
+                "00000000-0000-0000-0000-000000000000"
+            ),
             help="IAM endpoint used by services",
+        ),
+        cfg.StrOpt(
+            "audience",
+            default="GenesisCoreClientId",
+            help="The correct audience of the JWT token for this service",
         ),
         cfg.StrOpt(
             "hs256_jwks_decryption_key",
