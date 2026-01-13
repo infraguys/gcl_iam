@@ -1,4 +1,4 @@
-#    Copyright 2025 Genesis Corporation.
+#    Copyright 2025-2026 Genesis Corporation.
 #
 #    All Rights Reserved.
 #
@@ -213,7 +213,7 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
             "email": f"{username}@genesis.com",
         }
         body.update(kwargs)
-        return self._client.post(
+        return self.post(
             self.build_collection_uri(["iam/users/"]),
             json=body,
         ).json()
