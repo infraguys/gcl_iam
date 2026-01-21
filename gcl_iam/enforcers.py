@@ -21,7 +21,6 @@ import logging
 from gcl_iam import exceptions
 from gcl_iam import rules
 
-
 LOG = logging.getLogger(__name__)
 
 

@@ -31,7 +31,6 @@ import jwt
 import gcl_iam.constants as c
 import gcl_iam.exceptions as exc
 
-
 LOG = logging.getLogger(__name__)
 
 ALGORITHM_HS256 = c.ALGORITHM_HS256
