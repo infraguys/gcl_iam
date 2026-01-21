@@ -24,7 +24,6 @@ from restalchemy.storage.sql import engines
 from gcl_iam import constants as c
 from gcl_iam import exceptions as e
 
-
 LOG = logging.getLogger(__name__)
 
 

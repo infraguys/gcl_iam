@@ -26,7 +26,6 @@ from bazooka import common
 from bazooka import exceptions as bazooka_exceptions
 import jwt
 
-
 SECRET = "secret"
 DEFAULT_ENDPOINT = "http://localhost:11010/v1/"
 
