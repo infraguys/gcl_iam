@@ -25,7 +25,6 @@ from restalchemy.common import contexts
 from gcl_iam import controllers
 from gcl_iam import exceptions
 
-
 FAKE_PROJECT_ID = uuid.UUID("fbe1fc09-e4cc-4cd2-a51d-c823b40155b2")
 FAKE_PROJECT_ID_2 = uuid.UUID("29885802-c8b9-42d5-806f-6ecc1c943bbb")
 FAKE_METHOD = "fake_method"
