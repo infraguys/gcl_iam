@@ -1,4 +1,4 @@
-#    Copyright 2025 Genesis Corporation.
+#    Copyright 2025-2026 Genesis Corporation.
 #
 #    All Rights Reserved.
 #
@@ -42,7 +42,7 @@ class FakeController(controllers.PolicyBasedControllerMixin):
 def ctx_storage_context(**kwargs):
     ctx_storage = mock.Mock()
     contexts.ContextWithStorage._store_context_session(ctx_storage)
-    ctx_storage.iam_context.introspection_info.return_value = {
+    ctx_storage.iam_context.raw_introspection_info = {
         "user_info": {},
         "project_id": FAKE_PROJECT_ID,
         "otp_verified": True,
@@ -53,8 +53,8 @@ def ctx_storage_context(**kwargs):
             "genesis_core.vm.admin",
         ],
     }
-    ctx_storage.iam_context.introspection_info.return_value.update(kwargs)
-    return ctx_storage.iam_context.introspection_info
+    ctx_storage.iam_context.raw_introspection_info.update(kwargs)
+    return ctx_storage.iam_context
 
 
 @pytest.fixture
@@ -115,7 +115,7 @@ class TestPolicyBasedControllerMixin:
         )
 
     def test_auth_project_scoped_any_permission(self, unscoped_context):
-        unscoped_context.return_value = {
+        unscoped_context.raw_introspection_info = {
             "user_info": {},
             "project_id": FAKE_PROJECT_ID,
             "otp_verified": True,
