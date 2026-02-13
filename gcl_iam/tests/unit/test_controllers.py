@@ -22,7 +22,7 @@ from unittest import mock
 from restalchemy.api import constants
 from restalchemy.common import contexts
 
-from gcl_iam import controllers
+from gcl_iam.api import controllers
 from gcl_iam import exceptions
 
 FAKE_PROJECT_ID = uuid.UUID("fbe1fc09-e4cc-4cd2-a51d-c823b40155b2")
