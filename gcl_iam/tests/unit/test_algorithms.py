@@ -94,9 +94,7 @@ def test_hs256_decode_previous_key() -> None:
     algo = algorithms.HS256(key="current", previous_key="previous")
     payload = {"sub": "user"}
 
-    token = jwt.encode(
-        payload, key="previous", algorithm=constants.ALGORITHM_HS256
-    )
+    token = jwt.encode(payload, key="previous", algorithm=constants.ALGORITHM_HS256)
     decoded = algo.decode(token)
 
     assert decoded["sub"] == "user"
@@ -113,9 +111,7 @@ def test_rs256_encode_decode_current_key() -> None:
     private_key_pem = algorithms.generate_rsa_private_key_pem(bitness=2048)
     public_key_pem = algorithms.generate_rsa_public_key_pem(private_key_pem)
 
-    algo = algorithms.RS256(
-        private_key=private_key_pem, public_key=public_key_pem
-    )
+    algo = algorithms.RS256(private_key=private_key_pem, public_key=public_key_pem)
     payload = {"sub": "user"}
 
     token = algo.encode(payload)
@@ -126,18 +122,12 @@ def test_rs256_encode_decode_current_key() -> None:
 
 def test_rs256_decode_previous_public_key() -> None:
     old_private_key_pem = algorithms.generate_rsa_private_key_pem(bitness=2048)
-    old_public_key_pem = algorithms.generate_rsa_public_key_pem(
-        old_private_key_pem
-    )
+    old_public_key_pem = algorithms.generate_rsa_public_key_pem(old_private_key_pem)
 
     new_private_key_pem = algorithms.generate_rsa_private_key_pem(bitness=2048)
-    new_public_key_pem = algorithms.generate_rsa_public_key_pem(
-        new_private_key_pem
-    )
+    new_public_key_pem = algorithms.generate_rsa_public_key_pem(new_private_key_pem)
 
-    token = jwt.encode(
-        {"sub": "user"}, key=old_private_key_pem, algorithm="RS256"
-    )
+    token = jwt.encode({"sub": "user"}, key=old_private_key_pem, algorithm="RS256")
 
     algo = algorithms.RS256(
         private_key=new_private_key_pem,
@@ -153,9 +143,7 @@ def test_rs256_invalid_token_raises_credentials_invalid() -> None:
     private_key_pem = algorithms.generate_rsa_private_key_pem(bitness=2048)
     public_key_pem = algorithms.generate_rsa_public_key_pem(private_key_pem)
 
-    algo = algorithms.RS256(
-        private_key=private_key_pem, public_key=public_key_pem
-    )
+    algo = algorithms.RS256(private_key=private_key_pem, public_key=public_key_pem)
 
     with pytest.raises(exceptions.CredentialsAreInvalidError):
         algo.decode("not-a-jwt")
@@ -165,9 +153,7 @@ def test_rs256_decode_calls_jwt_decode() -> None:
     private_key_pem = algorithms.generate_rsa_private_key_pem(bitness=2048)
     public_key_pem = algorithms.generate_rsa_public_key_pem(private_key_pem)
 
-    algo = algorithms.RS256(
-        private_key=private_key_pem, public_key=public_key_pem
-    )
+    algo = algorithms.RS256(private_key=private_key_pem, public_key=public_key_pem)
 
     with mock.patch.object(jwt, "decode", wraps=jwt.decode) as jwt_decode:
         token = algo.encode({"sub": "user"})

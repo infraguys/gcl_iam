@@ -27,16 +27,13 @@ from gcl_iam import rules
 
 
 class PolicyBasedControllerMixin(object):
-
     __policy_service_name__ = ""
     __policy_name__ = None
     _otp_mandatory = set()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._introspection = (
-            contexts.get_context().iam_context.introspection_info()
-        )
+        self._introspection = contexts.get_context().iam_context.introspection_info()
 
         self._ctx_project_id = self._introspection.get("project_id", None)
         if isinstance(self._ctx_project_id, str):
@@ -74,15 +71,10 @@ class PolicyBasedControllerMixin(object):
         if "project_id" in kwargs:
             self._force_project_id(kwargs["project_id"])
         else:
-            kwargs["project_id"] = types.UUID().from_simple_type(
-                self._ctx_project_id
-            )
+            kwargs["project_id"] = types.UUID().from_simple_type(self._ctx_project_id)
 
     def _check_otp(self, method):
-        if (
-            self._introspection.get("otp_enabled")
-            or method in self._otp_mandatory
-        ):
+        if self._introspection.get("otp_enabled") or method in self._otp_mandatory:
             if not self._introspection.get("otp_verified"):
                 raise exceptions.OTPInvalidCodeError()
 
@@ -90,7 +82,6 @@ class PolicyBasedControllerMixin(object):
 class PolicyBasedController(
     PolicyBasedControllerMixin, controllers.BaseResourceController
 ):
-
     def create(self, **kwargs):
         self._enforce_and_override_project_id_in_kwargs("create", kwargs)
 
@@ -103,9 +94,7 @@ class PolicyBasedController(
 
     def filter(self, filters, order_by=None):
         self._enforce_and_override_project_id_in_kwargs("read", filters)
-        return super(PolicyBasedController, self).filter(
-            filters, order_by=order_by
-        )
+        return super(PolicyBasedController, self).filter(filters, order_by=order_by)
 
     def delete(self, uuid):
         filters = {}
@@ -127,7 +116,6 @@ class PolicyBasedController(
 class NestedPolicyBasedController(
     PolicyBasedControllerMixin, controllers.BaseNestedResourceController
 ):
-
     # Nested resources may not have projects, so it will be checked via parent
     def create(self, parent_resource, **kwargs):
         if "project_id" in self.model.properties:
@@ -165,7 +153,6 @@ class NestedPolicyBasedController(
 class PolicyBasedWithoutProjectController(
     PolicyBasedControllerMixin, controllers.BaseResourceController
 ):
-
     def create(self, **kwargs):
         self._enforce("create")
         return super().create(**kwargs)

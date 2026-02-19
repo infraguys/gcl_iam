@@ -105,14 +105,8 @@ class TestPolicyBasedControllerMixin:
     def test_auth_unscoped(self, unscoped_context):
         pc = FakeController()
 
-        assert (
-            pc._enforce_and_authorize_project_id("create", FAKE_PROJECT_ID)
-            is None
-        )
-        assert (
-            pc._enforce_and_authorize_project_id("create", FAKE_PROJECT_ID_2)
-            is None
-        )
+        assert pc._enforce_and_authorize_project_id("create", FAKE_PROJECT_ID) is None
+        assert pc._enforce_and_authorize_project_id("create", FAKE_PROJECT_ID_2) is None
 
     def test_auth_project_scoped_any_permission(self, unscoped_context):
         unscoped_context.return_value = {
@@ -130,10 +124,7 @@ class TestPolicyBasedControllerMixin:
 
         pc = FakeController()
 
-        assert (
-            pc._enforce_and_authorize_project_id("create", FAKE_PROJECT_ID)
-            is None
-        )
+        assert pc._enforce_and_authorize_project_id("create", FAKE_PROJECT_ID) is None
 
         with pytest.raises(exceptions.Forbidden):
             pc._enforce_and_authorize_project_id("create", FAKE_PROJECT_ID_2)
@@ -146,9 +137,7 @@ class TestPolicyBasedControllerMixin:
     def test_auth_project_id_method_forbidden(self, user_context):
         with pytest.raises(exceptions.Forbidden):
             pc = FakeController()
-            pc._enforce_and_authorize_project_id(
-                "strange_create", FAKE_PROJECT_ID_2
-            )
+            pc._enforce_and_authorize_project_id("strange_create", FAKE_PROJECT_ID_2)
 
     def test_auth_non_uuid_project_id_allowed(self, user_context):
         pc = FakeController()
@@ -178,7 +167,6 @@ class TestPolicyBasedControllerMixin:
 
 
 class TestPolicyBasedCheckOtpController:
-
     def test_check_otp_verified_true(self, otp_enabled_context):
         pc = controllers.PolicyBasedCheckOtpController(request=mock.Mock())
         pc._check_otp(constants.GET)

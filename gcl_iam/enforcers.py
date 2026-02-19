@@ -25,7 +25,6 @@ LOG = logging.getLogger(__name__)
 
 
 class OrderedEnum(Enum):
-
     def __ge__(self, other):
         if self.__class__ is other.__class__:
             return self.value >= other.value
@@ -55,7 +54,6 @@ class BasicOrderedGrant(OrderedEnum):
 
 
 class Grant(BasicOrderedGrant):
-
     DENY = 0
     # VIEWER = 1
     # REGULAR = 10

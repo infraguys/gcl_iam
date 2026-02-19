@@ -69,10 +69,7 @@ class IntrospectionInfo:
 
 
 class IamEngine:
-
-    def __init__(
-        self, auth_token, algorithm, driver, enforcer=None, otp_code=None
-    ):
+    def __init__(self, auth_token, algorithm, driver, enforcer=None, otp_code=None):
         super().__init__()
         self._token_info = tokens.AuthToken(
             auth_token,

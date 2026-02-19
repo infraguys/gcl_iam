@@ -67,9 +67,7 @@ def encrypt_hs256_jwks_secret(
     )
 
     nonce_b64 = base64.urlsafe_b64encode(nonce).rstrip(b"=").decode("ascii")
-    ciphertext_b64 = (
-        base64.urlsafe_b64encode(ciphertext).rstrip(b"=").decode("ascii")
-    )
+    ciphertext_b64 = base64.urlsafe_b64encode(ciphertext).rstrip(b"=").decode("ascii")
     return f"aesgcm:{nonce_b64}.{ciphertext_b64}"
 
 
@@ -124,9 +122,7 @@ def generate_rsa_private_key_pem(
 ) -> str:
     allowed_bitness = {2048, 3072, 4096}
     if bitness not in allowed_bitness:
-        raise ValueError(
-            "Invalid RSA bitness. Allowed values: 2048, 3072, 4096."
-        )
+        raise ValueError("Invalid RSA bitness. Allowed values: 2048, 3072, 4096.")
 
     private_key = crypto_rsa.generate_private_key(
         public_exponent=public_exponent,
@@ -168,7 +164,6 @@ def get_rsa_bitness_from_private_key_pem(private_key_pem: str) -> int:
 
 
 class AbstractAlgorithm(metaclass=abc.ABCMeta):
-
     @abc.abstractmethod
     def decode(self, data: str) -> tp.Dict[str, tp.Any]:
         raise NotImplementedError("Not implemented")
@@ -179,7 +174,6 @@ class AbstractAlgorithm(metaclass=abc.ABCMeta):
 
 
 class BaseJwtAlgorithm(AbstractAlgorithm):
-
     @property
     @abc.abstractmethod
     def algorithm(self) -> str:
@@ -249,7 +243,6 @@ class BaseJwtAlgorithm(AbstractAlgorithm):
 
 
 class HS256(BaseJwtAlgorithm):
-
     def __init__(self, key: str, previous_key: tp.Optional[str] = None):
         super().__init__()
         self._key = key
@@ -268,7 +261,6 @@ class HS256(BaseJwtAlgorithm):
 
 
 class RS256VerifyOnly(BaseJwtAlgorithm):
-
     def __init__(
         self,
         public_key: str,
@@ -291,7 +283,6 @@ class RS256VerifyOnly(BaseJwtAlgorithm):
 
 
 class RS256(RS256VerifyOnly):
-
     def __init__(
         self,
         private_key: str,
