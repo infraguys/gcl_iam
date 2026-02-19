@@ -28,7 +28,6 @@ LOG = logging.getLogger(__name__)
 
 
 class GenesisCoreAuthContext(contexts.ContextWithStorage):
-
     def __init__(
         self,
         req,
@@ -58,9 +57,7 @@ class GenesisCoreAuthContext(contexts.ContextWithStorage):
         port = forwarded_port or parsed.port
 
         new_uri = (
-            f"{scheme}://{host}:{port}"
-            if port is not None
-            else f"{scheme}://{host}"
+            f"{scheme}://{host}:{port}" if port is not None else f"{scheme}://{host}"
         )
 
         if forwarded_prefix:

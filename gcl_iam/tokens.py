@@ -22,7 +22,6 @@ import jwt
 
 
 class BaseToken:
-
     def __init__(
         self,
         token: tp.Optional[str],
@@ -52,7 +51,6 @@ class BaseToken:
 
 
 class UnverifiedToken(BaseToken):
-
     def __init__(self, token: str):
         token_info = jwt.decode(
             token,
@@ -71,7 +69,6 @@ class UnverifiedToken(BaseToken):
 
 
 class VerifiedToken(BaseToken):
-
     def __init__(
         self,
         token,
@@ -116,13 +113,10 @@ class VerifiedToken(BaseToken):
 
 
 class AuthToken(VerifiedToken):
-
     @property
     def autenticated_at(self):
         auth_time = self._token_info["auth_time"]
-        return datetime.datetime.fromtimestamp(
-            auth_time, tz=datetime.timezone.utc
-        )
+        return datetime.datetime.fromtimestamp(auth_time, tz=datetime.timezone.utc)
 
     @property
     def token_type(self):
@@ -134,7 +128,6 @@ class AuthToken(VerifiedToken):
 
 
 class IdToken(VerifiedToken):
-
     def __init__(
         self,
         token,
@@ -154,9 +147,7 @@ class IdToken(VerifiedToken):
     @property
     def autenticated_at(self):
         auth_time = self._token_info["auth_time"]
-        return datetime.datetime.fromtimestamp(
-            auth_time, tz=datetime.timezone.utc
-        )
+        return datetime.datetime.fromtimestamp(auth_time, tz=datetime.timezone.utc)
 
     @property
     def user_name(self):
@@ -168,7 +159,6 @@ class IdToken(VerifiedToken):
 
 
 class RefreshToken(VerifiedToken):
-
     def __init__(
         self,
         token,
