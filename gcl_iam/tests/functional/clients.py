@@ -31,7 +31,6 @@ DEFAULT_ENDPOINT = "http://localhost:11010/v1/"
 
 
 class GenesisCoreAuth:
-
     def __init__(
         self,
         username: str,
@@ -89,10 +88,7 @@ class GenesisCoreAuth:
         self._project_id = project_id
 
     def get_client_url(self, endpoint=DEFAULT_ENDPOINT):
-        return (
-            f"{common.force_last_slash(endpoint)}iam/clients/"
-            f"{self._client_uuid}"
-        )
+        return f"{common.force_last_slash(endpoint)}iam/clients/{self._client_uuid}"
 
     def get_token_url(self, endpoint=DEFAULT_ENDPOINT):
         return f"{self.get_client_url(endpoint)}/actions/get_token/invoke"
@@ -150,9 +146,7 @@ class GenesisCoreAuth:
             "client_id": self._client_id,
             "client_secret": self._client_secret,
             "password": self._password,
-            "scope": (
-                f"project:{self._project_id}" if self._project_id else ""
-            ),
+            "scope": (f"project:{self._project_id}" if self._project_id else ""),
         }
         if self.grant_type in ("password", "username+password"):
             params["username"] = self._username
@@ -174,7 +168,6 @@ class GenesisCoreAuth:
 
 
 class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
-
     def __init__(self, endpoint: str, timeout: int = 5):
         super().__init__()
         self._endpoint = endpoint
@@ -263,9 +256,7 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
 
     def get_user_roles(self, user_uuid):
         return self.get(
-            self.build_resource_uri(
-                ["iam/users/", user_uuid, "actions/get_my_roles"]
-            ),
+            self.build_resource_uri(["iam/users/", user_uuid, "actions/get_my_roles"]),
         ).json()
 
     def create_role(self, name, description="Functional test role", **kwargs):
@@ -379,24 +370,18 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
         )
         return None if result.status_code == 204 else result.json()
 
-    def create_or_get_permission_binding(
-        self, permission_uuid, role_uuid, **kwargs
-    ):
+    def create_or_get_permission_binding(self, permission_uuid, role_uuid, **kwargs):
         url = self.build_collection_uri(["iam/permission_bindings/"])
         params = {"permission": permission_uuid, "role": role_uuid}
         params.update(kwargs)
         for bind in self.get(url=url, params=params).json():
             return bind
-        return self.bind_permission_to_role(
-            permission_uuid, role_uuid, **kwargs
-        )
+        return self.bind_permission_to_role(permission_uuid, role_uuid, **kwargs)
 
     # TODO(efrolov): delete after refactoring dependencies
     create_or_get_binding = create_or_get_permission_binding
 
-    def bind_role_to_user(
-        self, role_uuid, user_uuid, project_id=None, **kwargs
-    ):
+    def bind_role_to_user(self, role_uuid, user_uuid, project_id=None, **kwargs):
         body = kwargs.copy()
         body.update(
             {
@@ -430,9 +415,7 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
 
         for bind in self.get(url=url, params=params).json():
             return bind
-        return self.bind_role_to_user(
-            role_uuid, user_uuid, project_id, **kwargs
-        )
+        return self.bind_role_to_user(role_uuid, user_uuid, project_id, **kwargs)
 
     create_role_binding = bind_role_to_user
 
@@ -548,9 +531,7 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
         )
         return None if result.status_code == 204 else result.json()
 
-    def create_organization_member(
-        self, organization_uuid, user_uuid, role, **kwargs
-    ):
+    def create_organization_member(self, organization_uuid, user_uuid, role, **kwargs):
         body = dict(
             organization=f"/v1/iam/organizations/{organization_uuid}",
             user=f"/v1/iam/users/{user_uuid}",
@@ -595,9 +576,7 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
             project_id=project_id,
         )
 
-    def create_iam_client(
-        self, name, client_id, secret, signature_algorithm, **kwargs
-    ):
+    def create_iam_client(self, name, client_id, secret, signature_algorithm, **kwargs):
         body = kwargs.copy()
 
         body.update(
@@ -637,7 +616,6 @@ class GenesisCoreTestNoAuthRESTClient(common.RESTClientMixIn):
 
 
 class GenesisCoreTestRESTClient(GenesisCoreTestNoAuthRESTClient):
-
     def __init__(self, endpoint: str, auth: GenesisCoreAuth, timeout: int = 5):
         super().__init__(
             endpoint=endpoint,
@@ -716,9 +694,7 @@ class DummyGenesisCoreTestRESTClient(GenesisCoreTestRESTClient):
             "sub": str(sys_uuid.uuid4()),
             "typ": "test_type",
         }
-        return jwt.encode(
-            data, os.getenv("HS256_KEY", SECRET), algorithm="HS256"
-        )
+        return jwt.encode(data, os.getenv("HS256_KEY", SECRET), algorithm="HS256")
 
     def authenticate(self):
         value = getattr(self, "_auth_cache", None)

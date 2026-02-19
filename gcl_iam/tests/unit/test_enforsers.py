@@ -98,9 +98,7 @@ def test_error_raising_on_denied_rule():
     enforcer = Enforcer(perms)
 
     with pytest.raises(exceptions.PolicyNotAuthorized) as excinfo:
-        enforcer.enforce(
-            rules.Rule("genesis_core", "resource", "other"), do_raise=True
-        )
+        enforcer.enforce(rules.Rule("genesis_core", "resource", "other"), do_raise=True)
 
     assert "genesis_core.resource.other" in str(excinfo.value)
 

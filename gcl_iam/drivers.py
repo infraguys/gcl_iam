@@ -36,7 +36,6 @@ from gcl_iam import tokens
 
 
 class AbstractAuthDriver(metaclass=abc.ABCMeta):
-
     @abc.abstractmethod
     def get_introspection_info(self, token_info, otp_code=None):
         raise NotImplementedError("Not implemented")
@@ -143,7 +142,6 @@ class DummyDriver(AbstractAuthDriver):
 
 
 class HttpDriver(AbstractAuthDriver):
-
     def __init__(
         self,
         iam_endpoint: str,
@@ -160,9 +158,7 @@ class HttpDriver(AbstractAuthDriver):
         self._cache_ttl_seconds = cache_ttl_seconds
         self._hs256_jwks_decryption_key = hs256_jwks_decryption_key
 
-        self._get_algorithm_cached = functools.lru_cache(
-            maxsize=cache_maxsize
-        )(
+        self._get_algorithm_cached = functools.lru_cache(maxsize=cache_maxsize)(
             self._get_algorithm_uncached,
         )
 

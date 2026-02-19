@@ -33,7 +33,6 @@ LOG = logging.getLogger(__name__)
 
 
 class AbstactEndpointComparator(metaclass=abc.ABCMeta):
-
     def _build_full_path(self, path):
         return re.compile(path)
 
@@ -53,7 +52,6 @@ class EndpointComparator(AbstactEndpointComparator):
 
 
 class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
-
     def __init__(
         self,
         application,
@@ -90,9 +88,7 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
             return None
         return int(req.headers["X-OTP"])
 
-    def _get_unverified_token_info(
-        self, auth_token: str
-    ) -> tokens.UnverifiedToken:
+    def _get_unverified_token_info(self, auth_token: str) -> tokens.UnverifiedToken:
         return tokens.UnverifiedToken(auth_token)
 
     def _get_response(self, ctx, req):
@@ -105,9 +101,7 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
                     auth_token = self._get_auth_token(req)
                     token_info = self._get_unverified_token_info(auth_token)
 
-                    algorithm = self._iam_engine_driver.get_algorithm(
-                        token_info
-                    )
+                    algorithm = self._iam_engine_driver.get_algorithm(token_info)
                     iam_context = engines.IamEngine(
                         auth_token=auth_token,
                         algorithm=algorithm,
@@ -126,7 +120,6 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
 
 
 class ErrorsHandlerMiddleware(errors_mw.ErrorsHandlerMiddleware):
-
     forbidden_exc = (exc.CommonForbiddenError,)
 
     def _construct_error_response(self, req, e):
