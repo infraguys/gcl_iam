@@ -25,6 +25,7 @@ from restalchemy.api.middlewares import contexts as contexts_mw
 from restalchemy.api.middlewares import errors as errors_mw
 
 from gcl_iam import contexts
+from gcl_iam import drivers
 from gcl_iam import engines
 from gcl_iam import exceptions as exc
 from gcl_iam import tokens
@@ -81,7 +82,7 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
         header_value = req.headers.get("Authorization", "")
         if header_value.lower().startswith("bearer "):
             return header_value.split(" ")[1]
-        raise exc.InvalidAuthTokenError()
+        return None
 
     def _get_otp_code(self, req):
         if "X-OTP" not in req.headers:
@@ -97,22 +98,33 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
                 LOG.info("Skip auth for %s", req.path)
                 return super()._get_response(ctx, req)
             else:
-                try:
-                    auth_token = self._get_auth_token(req)
-                    token_info = self._get_unverified_token_info(auth_token)
+                auth_token = self._get_auth_token(req)
+                if auth_token is None:
+                    # Create IamEngine with anonymous user data using AnonDriver
 
-                    algorithm = self._iam_engine_driver.get_algorithm(token_info)
+                    anon_driver = drivers.AnonDriver()
                     iam_context = engines.IamEngine(
-                        auth_token=auth_token,
-                        algorithm=algorithm,
-                        driver=self._iam_engine_driver,
-                        otp_code=self._get_otp_code(req),
+                        auth_token="",
+                        algorithm=None,
+                        driver=anon_driver,
+                        otp_code=None,
                     )
-                except exc.OTPInvalidCodeError:
-                    raise
-                except Exception:
-                    LOG.exception("Invalid auth token by reason:")
-                    raise exc.InvalidAuthTokenError()
+                else:
+                    try:
+                        token_info = self._get_unverified_token_info(auth_token)
+
+                        algorithm = self._iam_engine_driver.get_algorithm(token_info)
+                        iam_context = engines.IamEngine(
+                            auth_token=auth_token,
+                            algorithm=algorithm,
+                            driver=self._iam_engine_driver,
+                            otp_code=self._get_otp_code(req),
+                        )
+                    except exc.OTPInvalidCodeError:
+                        raise
+                    except Exception:
+                        LOG.exception("Invalid auth token by reason:")
+                        raise exc.InvalidAuthTokenError()
 
                 with ctx.iam_session(iam_context):
                     req.iam_engine = iam_context
