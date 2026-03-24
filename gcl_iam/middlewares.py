@@ -68,6 +68,7 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
         )
         self._iam_engine_driver = iam_engine_driver
         self._skip_auth_endpoints = skip_auth_endpoints or []
+        self._anon_driver = drivers.AnonDriver()
 
     def _construct_context(self, req):
         return self._context_class(req=req, **self._context_kwargs)
@@ -81,7 +82,7 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
     def _get_auth_token(self, req):
         header_value = req.headers.get("Authorization", "")
         if header_value.lower().startswith("bearer "):
-            return header_value.split(" ")[1]
+            return header_value.split(" ", 1)[1]
         return None
 
     def _get_otp_code(self, req):
@@ -101,12 +102,10 @@ class GenesisCoreAuthMiddleware(contexts_mw.ContextMiddleware):
                 auth_token = self._get_auth_token(req)
                 if auth_token is None:
                     # Create IamEngine with anonymous user data using AnonDriver
-
-                    anon_driver = drivers.AnonDriver()
                     iam_context = engines.IamEngine(
                         auth_token="",
                         algorithm=None,
-                        driver=anon_driver,
+                        driver=self._anon_driver,
                         otp_code=None,
                     )
                 else:

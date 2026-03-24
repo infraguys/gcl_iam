@@ -142,9 +142,6 @@ class DummyDriver(AbstractAuthDriver):
 
 
 class AnonDriver(AbstractAuthDriver):
-    def __init__(self):
-        self.algorithm_keys: tp.Dict[str, AlgorithmKeys] = {}
-
     def get_introspection_info(self, token_info, otp_code=None):
         return {
             "user_info": {
@@ -164,28 +161,7 @@ class AnonDriver(AbstractAuthDriver):
         self,
         token_info: tokens.UnverifiedToken,
     ) -> tp.Optional[algorithms.AbstractAlgorithm]:
-        # For anonymous users, we don't need algorithm validation
-        if token_info is None:
-            return None
-
-        audience = token_info.audience_name
-        if audience not in self.algorithm_keys:
-            raise KeyError(f"Unknown audience: {audience}")
-        keys = self.algorithm_keys[audience]
-
-        if isinstance(keys, HS256AlgorithmKeys):
-            return algorithms.HS256(
-                key=keys.key,
-                previous_key=keys.previous_key,
-            )
-
-        if isinstance(keys, RS256AlgorithmKeys):
-            return algorithms.RS256VerifyOnly(
-                public_key=keys.public_key,
-                previous_public_key=keys.previous_public_key,
-            )
-
-        raise TypeError(f"Unexpected algorithm keys type: {type(keys)!r}")
+        raise NotImplementedError("AnonDriver does not support token validation.")
 
 
 class HttpDriver(AbstractAuthDriver):
