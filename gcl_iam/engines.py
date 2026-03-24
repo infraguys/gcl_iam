@@ -71,18 +71,27 @@ class IntrospectionInfo:
 class IamEngine:
     def __init__(self, auth_token, algorithm, driver, enforcer=None, otp_code=None):
         super().__init__()
-        self._token_info = tokens.AuthToken(
-            auth_token,
-            algorithm,
-            ignore_audience=True,
-            ignore_expiration=False,
-            verify=True,
-        )
         self._driver = driver
-        self._introspection_info = self._driver.get_introspection_info(
-            token_info=self._token_info,
-            otp_code=otp_code,
-        )
+
+        # Handle anonymous users (no auth token)
+        if auth_token == "" and algorithm is None:
+            self._token_info = None
+            self._introspection_info = self._driver.get_introspection_info(
+                token_info=None,
+                otp_code=otp_code,
+            )
+        else:
+            self._token_info = tokens.AuthToken(
+                auth_token,
+                algorithm,
+                ignore_audience=True,
+                ignore_expiration=False,
+                verify=True,
+            )
+            self._introspection_info = self._driver.get_introspection_info(
+                token_info=self._token_info,
+                otp_code=otp_code,
+            )
 
         # Forbid requests without auth or without project scope
         if not self._introspection_info:
@@ -92,7 +101,10 @@ class IamEngine:
             self._introspection_info["permissions"]
         )
 
-        self._introspection_info["otp_enabled"] = self._token_info.otp_enabled
+        if self._token_info:
+            self._introspection_info["otp_enabled"] = self._token_info.otp_enabled
+        else:
+            self._introspection_info["otp_enabled"] = False
 
     @property
     def token_info(self):

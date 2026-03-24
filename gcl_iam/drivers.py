@@ -98,9 +98,9 @@ class DummyDriver(AbstractAuthDriver):
         self.user_last_name = "Only For Tests"
         self.project_id = None
         self.otp_verified = True
-        self.permission_hash = "00000000-0000-0000-0000-000000000000"
         self.permissions = ["*.*.*"]
         self.algorithm_keys: tp.Dict[str, AlgorithmKeys] = {}
+        self.type = "user"
 
     def get_introspection_info(self, token_info, otp_code=None):
         return {
@@ -110,10 +110,10 @@ class DummyDriver(AbstractAuthDriver):
                 "first_name": self.user_first_name,
                 "last_name": self.user_last_name,
                 "email": self.user_email,
+                "type": self.type,
             },
             "project_id": self.project_id,
             "otp_verified": True if otp_code else self.otp_verified,
-            "permission_hash": self.permission_hash,
             "permissions": self.permissions,
         }
 
@@ -121,6 +121,53 @@ class DummyDriver(AbstractAuthDriver):
         self,
         token_info: tokens.UnverifiedToken,
     ) -> algorithms.AbstractAlgorithm:
+        audience = token_info.audience_name
+        if audience not in self.algorithm_keys:
+            raise KeyError(f"Unknown audience: {audience}")
+        keys = self.algorithm_keys[audience]
+
+        if isinstance(keys, HS256AlgorithmKeys):
+            return algorithms.HS256(
+                key=keys.key,
+                previous_key=keys.previous_key,
+            )
+
+        if isinstance(keys, RS256AlgorithmKeys):
+            return algorithms.RS256VerifyOnly(
+                public_key=keys.public_key,
+                previous_public_key=keys.previous_public_key,
+            )
+
+        raise TypeError(f"Unexpected algorithm keys type: {type(keys)!r}")
+
+
+class AnonDriver(AbstractAuthDriver):
+    def __init__(self):
+        self.algorithm_keys: tp.Dict[str, AlgorithmKeys] = {}
+
+    def get_introspection_info(self, token_info, otp_code=None):
+        return {
+            "user_info": {
+                "uuid": "11111111-1111-1111-1111-111111111111",
+                "name": "anon",
+                "first_name": "anon",
+                "last_name": "anon",
+                "email": "anon@genesis-core.tech",
+                "type": "anon",
+            },
+            "project_id": None,
+            "otp_verified": False,
+            "permissions": tuple(),
+        }
+
+    def get_algorithm(
+        self,
+        token_info: tokens.UnverifiedToken,
+    ) -> tp.Optional[algorithms.AbstractAlgorithm]:
+        # For anonymous users, we don't need algorithm validation
+        if token_info is None:
+            return None
+
         audience = token_info.audience_name
         if audience not in self.algorithm_keys:
             raise KeyError(f"Unknown audience: {audience}")
