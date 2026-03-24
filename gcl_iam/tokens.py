@@ -15,6 +15,7 @@
 #    under the License.
 
 import datetime
+import time
 import typing as tp
 import uuid
 
@@ -174,3 +175,57 @@ class RefreshToken(VerifiedToken):
             ignore_expiration=ignore_expiration,
             verify=verify,
         )
+
+
+class AnonymousToken(BaseToken):
+    """Token for anonymous users with mock JWT data"""
+
+    def __init__(self):
+        # Mock JWT token info for anonymous user
+        token_info = {
+            "exp": int(time.time()) + 360000,  # Far future expiration
+            "iat": int(time.time()),
+            "auth_time": int(time.time()),
+            "jti": "11111111-1111-1111-1111-111111111111",  # Fixed UUID for anon
+            "iss": "genesis-core-iam",
+            "aud": "anon",
+            "sub": "11111111-1111-1111-1111-111111111111",
+            "typ": "anon",
+        }
+
+        super().__init__(
+            token="",  # No actual token for anonymous users
+            token_info=token_info,
+            audience="anon",
+        )
+
+    @property
+    def expiration_datetime(self):
+        exp = self._token_info["exp"]
+        return datetime.datetime.fromtimestamp(exp, tz=datetime.timezone.utc)
+
+    @property
+    def created_at(self):
+        iat = self._token_info["iat"]
+        return datetime.datetime.fromtimestamp(iat, tz=datetime.timezone.utc)
+
+    @property
+    def issuer_url(self):
+        return self._token_info["iss"]
+
+    @property
+    def user_uuid(self):
+        return uuid.UUID(self._token_info["sub"])
+
+    @property
+    def autenticated_at(self):
+        auth_time = self._token_info["auth_time"]
+        return datetime.datetime.fromtimestamp(auth_time, tz=datetime.timezone.utc)
+
+    @property
+    def token_type(self):
+        return self._token_info["typ"]
+
+    @property
+    def otp_enabled(self):
+        return False

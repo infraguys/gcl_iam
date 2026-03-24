@@ -45,6 +45,10 @@ class UserInfo:
     def email(self):
         return self._info["email"]
 
+    @property
+    def type(self):
+        return self._info["type"]
+
 
 class IntrospectionInfo:
     def __init__(self, info):
@@ -75,9 +79,9 @@ class IamEngine:
 
         # Handle anonymous users (no auth token)
         if auth_token == "" and algorithm is None:
-            self._token_info = None
+            self._token_info = tokens.AnonymousToken()
             self._introspection_info = self._driver.get_introspection_info(
-                token_info=None,
+                token_info=self._token_info,
                 otp_code=otp_code,
             )
         else:
@@ -101,10 +105,7 @@ class IamEngine:
             self._introspection_info["permissions"]
         )
 
-        if self._token_info:
-            self._introspection_info["otp_enabled"] = self._token_info.otp_enabled
-        else:
-            self._introspection_info["otp_enabled"] = False
+        self._introspection_info["otp_enabled"] = self._token_info.otp_enabled
 
     @property
     def token_info(self):
